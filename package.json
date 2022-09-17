@@ -4,7 +4,8 @@
   "description": "Platform agnostic reactive form controls",
   "main": "index.js",
   "scripts": {
-    "build": "tsc -p ./"
+    "build:compile": "tsc -p ./build",
+    "build:webpack": "npm run build:compile && npx webpack --entry ./build/out/index.js --output-path ./build/out/dist --config ./build/webpack.config.js"
   },
   "repository": {
     "type": "git",
@@ -22,5 +23,9 @@
   "homepage": "https://github.com/reed-lawrence/lotus-forms#readme",
   "dependencies": {
     "rxjs": "^7.5.6"
+  },
+  "devDependencies": {
+    "webpack": "^5.74.0",
+    "webpack-cli": "^4.10.0"
   }
 }
