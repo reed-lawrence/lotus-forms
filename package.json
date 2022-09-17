@@ -1,0 +1,26 @@
+{
+  "name": "lotus-forms",
+  "version": "0.9.0",
+  "description": "Platform agnostic reactive form controls",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc -p ./"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/reed-lawrence/lotus-forms.git"
+  },
+  "keywords": [
+    "reactive",
+    "forms"
+  ],
+  "author": "Reed Lawrence",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/reed-lawrence/lotus-forms/issues"
+  },
+  "homepage": "https://github.com/reed-lawrence/lotus-forms#readme",
+  "dependencies": {
+    "rxjs": "^7.5.6"
+  }
+}

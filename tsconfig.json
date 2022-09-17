@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "sourceMap": true,
+    "strict": true,
+    "noImplicitReturns": true,
+    "moduleResolution": "node",
+    "stripInternal": true,
+    "lib": [
+      "esnext",
+      "dom"
+    ],
+    "target": "esnext",
+    "outDir": "./out"
+  }
+}
