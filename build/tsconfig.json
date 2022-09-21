@@ -1,5 +1,5 @@
 {
-  "include": ["../**.*"],
+  "include": ["../**/*"],
   "compilerOptions": {
     "sourceMap": true,
     "strict": true,
@@ -11,6 +11,9 @@
       "dom"
     ],
     "target": "esnext",
-    "outDir": "./out"
-  }
+    "outDir": "./out",
+    "module": "esnext",
+    "declaration": true,
+    "noImplicitOverride": true
+  },
 }
