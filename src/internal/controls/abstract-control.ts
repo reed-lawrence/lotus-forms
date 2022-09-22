@@ -28,68 +28,32 @@ export interface IAbstractControl<T = any> {
   set valid(value: boolean);
 
   get dirty(): boolean;
-  set dirty(value: boolean);
-
   get pristine(): boolean;
-  set pristine(value: boolean);
+
+  get state(): AbstractControlState;
+  set state(value: AbstractControlState);
 
   get errors(): string[];
   get $valid(): Observable<boolean>;
   get $name(): Observable<string | undefined>;
   get $value(): Observable<T>;
-  get $pristine(): Observable<boolean>;
-  get $dirty(): Observable<boolean>;
+  get $state(): Observable<AbstractControlState>;
   get $errors(): Observable<Map<ValidatorFn, string[]>>;
 
   addLoader(): Promise<Loader>;
-  onDispose(add: (obj: this) => void): void;
+  onDispose(add: () => void): void;
   dispose(): void;
   reset(): void;
 
-  addValidator(validators: ValidatorFn<T>[]): this;
-  addValidator(validator: ValidatorFn<T>): this;
-  addValidator(arg: ValidatorFn<T> | ValidatorFn<T>[]): this;
+  addValidator(validators: ValidatorFn<T>[]): void;
+  addValidator(validator: ValidatorFn<T>): void;
+  addValidator(arg: ValidatorFn<T> | ValidatorFn<T>[]): void;
 
-  removeValidator(validator: ValidatorFn<T>): this;
+  removeValidator(validator: ValidatorFn<T>): void;
 }
 
-export abstract class AbstractControl<T = any> implements IAbstractControl<T> {
-
-  protected readonly _default: () => T;
-  protected readonly _subs: Subscription[] = [];
-  protected readonly _onDispose: ((control: this) => void)[] = [
-    () => this._subs.forEach(s => s.unsubscribe()),
-    () => this._validators.forEach(obj => obj.sub.unsubscribe()),
-    () => Object.keys(this._validatorRefs).forEach(key => delete this._validatorRefs[key])
-  ];
-
-  protected readonly _validators = new Map<ValidatorFn<T>, { errors: string[]; sub: Subscription; }>();
-  protected readonly _validatorRefs: { [index: string]: ValidatorFn<any> } = {};
-
-  protected readonly _streams = new Map<ControlStreamCtor, Observable<any>>();
-  protected readonly _$stream = new Subject<IControlStreamEvent>();
-  protected readonly _$loadingQueue = new BehaviorSubject(new Set<string>());
-
-  protected _getStream<T>({ key, fn }: { key: ControlStreamCtor<T>; fn: () => T }): Observable<T> {
-    let stream = this._streams.get(key as any) as Observable<any>;
-
-    if (!stream) {
-
-      stream = this._$stream.pipe(
-        filter(ev => ev instanceof key),
-        map(() => fn()),
-        shareReplay()
-      );
-
-      this._streams.set(key, stream);
-    }
-
-    return stream;
-  }
-
-  protected _broadcast(event: ControlStreamEvent) {
-    this._$stream.next(event);
-  }
+export class AbstractControl<T = any> implements IAbstractControl<T> {
+  #default: () => T;
 
   #name: string = '';
   public get name() {
@@ -189,9 +153,9 @@ export abstract class AbstractControl<T = any> implements IAbstractControl<T> {
     );
 
     if (default_fn)
-      this._default = default_fn;
+      this.#default = default_fn;
     else
-      this._default = () => value;
+      this.#default = () => value;
 
     if (validators)
       this.addValidator(validators);

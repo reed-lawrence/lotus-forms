@@ -3,9 +3,7 @@ import { Validators } from "../internal/validators";
 import { IAbstractControl, AbstractControl, AbstractControlConfig } from "../internal/controls/abstract-control";
 import { RequiredChange, DisabledChange } from "../internal/events";
 
-export interface FormControlConfig<T> extends AbstractControlConfig<T> { }
-
-export interface IFormControl<T = any> extends IAbstractControl<T> {
+export interface IFormControl  {
 
   get required(): boolean;
   set required(value: boolean);
