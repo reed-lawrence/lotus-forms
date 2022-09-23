@@ -1,4 +1,4 @@
-import { AbstractControlState } from "./controls/abstract-control";
+import { AbstractControlState, IAbstractControl } from "../controls/abstract-control";
 import { ValidatorFn } from "./validators";
 
 export interface IControlStreamEvent<T = any> {
@@ -22,7 +22,7 @@ export class ValidChange extends ControlStreamEvent<boolean> { }
 export class DirtyChange extends ControlStreamEvent<boolean> { }
 export class PristineChange extends ControlStreamEvent<boolean> { }
 export class StateChange extends ControlStreamEvent<AbstractControlState> { }
-export class ErrorsChange extends ControlStreamEvent<Map<ValidatorFn, string[]>> { }
+export class ErrorsChange extends ControlStreamEvent<Map<ValidatorFn<any>, string[]>> { }
 export class RequiredChange extends ControlStreamEvent<boolean> { }
 export class DisabledChange extends ControlStreamEvent<boolean> { }
 export class ReadonlyChange extends ControlStreamEvent<boolean> { }

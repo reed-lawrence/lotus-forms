@@ -13,7 +13,6 @@
     "target": "esnext",
     "outDir": "./out",
     "module": "esnext",
-    "declaration": true,
     "noImplicitOverride": true
   },
 }

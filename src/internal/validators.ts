@@ -1,9 +1,9 @@
 import { Observable, switchMap, firstValueFrom, map } from "rxjs";
-import { IAbstractControl } from "./controls/abstract-control";
+import { IAbstractControl } from "../controls/abstract-control";
 
 export type ValidationError = { [index: string]: string };
 
-export type ValidatorFn<T = any> = (control: IAbstractControl<T>) => Observable<ValidationError | undefined>;
+export type ValidatorFn<T extends IAbstractControl = IAbstractControl> = (control: T) => Observable<ValidationError | undefined>;
 
 export interface IValidatorArgs {
   signal?: Observable<any>;
@@ -46,7 +46,7 @@ export class Validators {
       })), args);
   }
 
-  static max(number: number, args: IValidatorArgs = {}): ValidatorFn<number> {
+  static max(number: number, args: IValidatorArgs = {}): ValidatorFn<any> {
     return this.create((control) =>
       control.$value.pipe(
         map((value) => {

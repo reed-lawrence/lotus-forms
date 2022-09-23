@@ -1,4 +1,4 @@
-export interface Loader {
+export interface ILoader {
   id: string;
   remove(): Promise<void>;
 }

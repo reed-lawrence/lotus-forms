@@ -1,19 +1,28 @@
-import { Observable, Subscription, Subject, BehaviorSubject, filter, map, shareReplay } from "rxjs";
-import { ControlStreamCtor, ControlStreamEvent, DirtyChange, ErrorsChange, IControlStreamEvent, NameChange, PristineChange, StateChange, ValidChange, ValueChange } from "../events";
-import { Loader } from "../loader";
-import { flattenToDistinctStr } from "../utils";
-import { ValidatorFn } from "../validators";
+import {
+  BehaviorSubject,
+  filter,
+  map,
+  Observable,
+  shareReplay,
+  Subject,
+  Subscription
+} from 'rxjs';
+import {
+  ControlStreamCtor,
+  ErrorsChange,
+  IControlStreamEvent,
+  NameChange,
+  StateChange,
+  ValidChange,
+  ValueChange
+} from '../internal/events';
+import { flattenToDistinctStr } from '../internal/utils';
+import { ILoader } from '../internal/loader';
+import { ValidatorFn } from '../internal/validators';
 
 export enum AbstractControlState {
   pristine,
   dirty
-}
-
-export interface AbstractControlConfig<T> {
-  name: string;
-  value: T;
-  default_fn?: () => T;
-  validators?: ValidatorFn<T>[];
 }
 
 export interface IAbstractControl<T = any> {
@@ -40,20 +49,45 @@ export interface IAbstractControl<T = any> {
   get $state(): Observable<AbstractControlState>;
   get $errors(): Observable<Map<ValidatorFn, string[]>>;
 
-  addLoader(): Promise<Loader>;
+  addLoader(): Promise<ILoader>;
   onDispose(add: () => void): void;
   dispose(): void;
   reset(): void;
 
-  addValidator(validators: ValidatorFn<T>[]): void;
-  addValidator(validator: ValidatorFn<T>): void;
-  addValidator(arg: ValidatorFn<T> | ValidatorFn<T>[]): void;
+  addValidator(validators: ValidatorFn<this>[]): void;
+  addValidator(validator: ValidatorFn<this>): void;
+  addValidator(arg: ValidatorFn<this> | ValidatorFn<this>[]): void;
 
-  removeValidator(validator: ValidatorFn<T>): void;
+  removeValidator(validator: ValidatorFn<this>): void;
 }
 
-export class AbstractControl<T = any> implements IAbstractControl<T> {
-  #default: () => T;
+export class AbstractControl<T> implements IAbstractControl<T> {
+
+  constructor(...args: any[]) { }
+
+  protected readonly _default: T;
+  protected readonly _subs: Subscription[] = [];
+  protected readonly _onDispose: (() => void)[] = [];
+  protected readonly _validators = new Map<ValidatorFn<this>, { errors: string[]; sub: Subscription; }>();
+  protected readonly _validatorRefs: { [index: string]: ValidatorFn } = {};
+  protected readonly _streams = new Map<ControlStreamCtor, Observable<any>>();
+  protected readonly _$stream = new Subject<IControlStreamEvent>();
+  protected readonly _$loadingQueue = new BehaviorSubject(new Set<string>());
+  protected _getStream<T>({ key, fn }: { key: ControlStreamCtor, fn: () => T }) {
+    let stream = this._streams.get(key);
+
+    if (!stream) {
+      stream = this._$stream.pipe(
+        filter(ev => ev instanceof key),
+        map(() => fn()),
+        shareReplay()
+      );
+
+      this._streams.set(key, stream);
+    }
+
+    return stream;
+  }
 
   #name: string = '';
   public get name() {
@@ -65,7 +99,7 @@ export class AbstractControl<T = any> implements IAbstractControl<T> {
       return;
 
     this.#name = value;
-    this._broadcast(new NameChange(value));
+    this._$stream.next(new NameChange(value));
   }
 
   #value: T;
@@ -78,7 +112,7 @@ export class AbstractControl<T = any> implements IAbstractControl<T> {
       return;
 
     this.#value = value;
-    this._broadcast(new ValueChange(value));
+    this._$stream.next(new ValueChange(value));
   }
 
   #valid = true;
@@ -91,7 +125,7 @@ export class AbstractControl<T = any> implements IAbstractControl<T> {
       return;
 
     this.#valid = value;
-    this._broadcast(new ValidChange(value));
+    this._$stream.next(new ValidChange(value));
   }
 
   #state = AbstractControlState.pristine;
@@ -108,11 +142,11 @@ export class AbstractControl<T = any> implements IAbstractControl<T> {
       return;
 
     this.#state = value;
-    this._broadcast(new StateChange(value));
+    this._$stream.next(new StateChange(value));
   }
 
   #errors_distinct: string[] = [];
-  #error_refs = new Map<ValidatorFn, string[]>();
+  #error_refs = new Map<ValidatorFn<this>, string[]>();
   public get errors() {
     return this.#errors_distinct;
   }
@@ -135,42 +169,11 @@ export class AbstractControl<T = any> implements IAbstractControl<T> {
     return this._getStream({ key: ValidChange, fn: () => this.valid });
   }
 
-  get $dirty() {
-    return this._getStream({ key: DirtyChange, fn: () => this.dirty });
+  get $state() {
+    return this._getStream({ key: StateChange, fn: () => this.state });
   }
 
-  get $pristine() {
-    return this._getStream({ key: PristineChange, fn: () => this.pristine });
-  }
-
-  constructor({ name, value, default_fn, validators }: AbstractControlConfig<T>) {
-
-    this.name = name;
-    this.#value = value;
-    this.$loading = this._$loadingQueue.pipe(
-      map(queue => queue.size > 0),
-      shareReplay()
-    );
-
-    if (default_fn)
-      this.#default = default_fn;
-    else
-      this.#default = () => value;
-
-    if (validators)
-      this.addValidator(validators);
-
-    this._subs.push(
-      this.$errors.subscribe({
-        next: (errors) => {
-          console.log(errors);
-          this.valid = errors.size === 0;
-        }
-      })
-    );
-  }
-
-  async addLoader(): Promise<Loader> {
+  async addLoader(): Promise<ILoader> {
     const id = crypto.randomUUID();
 
     let queue = new Set(this._$loadingQueue.value);
@@ -194,11 +197,33 @@ export class AbstractControl<T = any> implements IAbstractControl<T> {
     };
   }
 
-  addValidator(validators: ValidatorFn<T>[]): this
-  addValidator(validator: ValidatorFn<T>): this
-  addValidator(arg: ValidatorFn<T> | ValidatorFn<T>[]): this {
+  onDispose(add: () => void): void {
+    this._onDispose.push(add);
+  }
 
-    let validators = Array.isArray(arg) ? arg : [arg];
+  dispose(): void {
+    for (const fn of this._onDispose)
+      try {
+        fn();
+      } catch (err) {
+        console.error(err);
+      }
+  }
+
+  reset(): void {
+    if (typeof this._default === 'object')
+      this.value = Object.assign({}, this._default);
+    else
+      this.value = this._default;
+
+    this.state = AbstractControlState.pristine;
+  }
+
+  addValidator(validators: ValidatorFn<this>[]): void;
+  addValidator(validator: ValidatorFn<this>): void;
+  addValidator(arg: ValidatorFn<this> | ValidatorFn<this>[]): void;
+  addValidator(arg: unknown) {
+    let validators = (Array.isArray(arg) ? arg : [arg]) as ValidatorFn<this>[];
 
     for (const validator of validators) {
 
@@ -242,24 +267,25 @@ export class AbstractControl<T = any> implements IAbstractControl<T> {
 
               this.#error_refs = all;
               this.#errors_distinct = flattenToDistinctStr(all.values());
+
+              this._$stream.next(new ErrorsChange(this.#error_refs));
+
             }
 
           }
         })
       });
     }
-
-    return this;
   }
 
-  removeValidator(validator: ValidatorFn<T>): this {
+  removeValidator(validator: ValidatorFn<this>): void {
     if (!validator)
-      return this;
+      return;
 
     const match = this._validators.get(validator);
 
     if (!match)
-      return this;
+      return;
 
     match.sub.unsubscribe();
 
@@ -272,29 +298,7 @@ export class AbstractControl<T = any> implements IAbstractControl<T> {
       this.#error_refs = all;
       this.#errors_distinct = flattenToDistinctStr(all.values());
 
-      this._broadcast(new ErrorsChange(all));
+      this._$stream.next(new ErrorsChange(all));
     }
-
-    return this;
-  }
-
-  onDispose(add: (control: this) => void) {
-    this._onDispose.push(add);
-  }
-
-  dispose() {
-    for (const fn of this._onDispose)
-      try {
-        fn(this);
-      } catch (err) {
-        console.error(err);
-      }
-  }
-
-  reset() {
-    if (this._default)
-      this.value = this._default();
-
-    this.state = AbstractControlState.pristine;
   }
 }
