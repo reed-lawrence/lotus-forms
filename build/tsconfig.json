@@ -4,10 +4,10 @@
     "sourceMap": true,
     "strict": true,
     "noImplicitReturns": true,
-    "moduleResolution": "node",
+    "moduleResolution": "Node",
     "stripInternal": true,
     "lib": [
-      "esnext",
+      "ESNext",
       "dom"
     ],
     "target": "esnext",

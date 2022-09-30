@@ -1,23 +1,51 @@
-const path = require('path');
+const {
+  resolve
+} = require('path');
+
+console.log(__dirname);
 
 module.exports = [
+  // {
+  //   entry: `${resolve(__dirname, 'out/src/index.js')}`,
+  //   output: {
+  //     filename: 'lotus_forms.min.js',
+  //     path: resolve(__dirname, 'dist'),
+  //     library: 'lotus_forms',
+  //   },
+  //   mode: 'production',
+  //   resolve: {
+  //     fallback: {
+  //       "crypto": false
+  //     }
+  //   }
+  // },
+  // {
+  //   entry: `${resolve(__dirname, 'out/src/index.js')}`,
+  //   output: {
+  //     filename: 'lotus_forms.js',
+  //     path: resolve(__dirname, 'dist'),
+  //     library: 'lotus_forms',
+  //   },
+  //   mode: 'development',
+  //   devtool: 'source-map',
+  //   resolve: {
+  //     fallback: {
+  //       "crypto": false
+  //     }
+  //   }
+  // },
   {
-    entry: `${path.resolve(__dirname, 'build/out/index.js')}`,
+    entry: `${resolve(__dirname, 'out/demo/demo-1.js')}`,
     output: {
-      filename: 'lotus_forms.min.js',
-      path: path.resolve(__dirname, 'build/dist'),
-      library: 'lotus_forms',
-    },
-    mode: 'production'
-  },
-  {
-    entry: `${path.resolve(__dirname, 'build/out/index.js')}`,
-    output: {
-      filename: 'lotus_forms.js',
-      path: path.resolve(__dirname, 'build/dist'),
-      library: 'lotus_forms',
+      filename: 'demo-1.js',
+      path: resolve(__dirname, 'dist'),
     },
     mode: 'development',
-    devtool: 'source-map'
+    devtool: 'source-map',
+    resolve: {
+      fallback: {
+        "crypto": false
+      }
+    }
   }
 ];

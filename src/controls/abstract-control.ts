@@ -4,6 +4,7 @@ import {
   map,
   Observable,
   shareReplay,
+  startWith,
   Subject,
   Subscription
 } from 'rxjs';
@@ -18,7 +19,10 @@ import {
 } from '../internal/events';
 import { flattenToDistinctStr } from '../internal/utils';
 import { ILoader } from '../internal/loader';
-import { ValidatorFn } from '../internal/validators';
+import { ValidatorFn } from '../validators/validators';
+import { randomUUID } from 'crypto';
+import { IMixin } from '../internal/mixin';
+import { IHasStream } from '../internal/interfaces';
 
 export enum AbstractControlState {
   pristine,
@@ -27,27 +31,29 @@ export enum AbstractControlState {
 
 export interface IAbstractControl<T = any> {
 
-  get name(): string;
-  set name(value: string);
+  getName(): string;
+  setName(value: string): void;
 
-  get value(): T;
-  set value(value: T);
+  getValue(): T;
+  setValue(value: T): void;
 
-  get valid(): boolean;
-  set valid(value: boolean);
+  getValid(): boolean;
+  setValid(value: boolean): void;
 
-  get dirty(): boolean;
-  get pristine(): boolean;
+  getDirty(): boolean;
+  getPristine(): boolean;
 
-  get state(): AbstractControlState;
-  set state(value: AbstractControlState);
+  getState(): AbstractControlState;
+  setState(value: AbstractControlState): void;
 
-  get errors(): string[];
-  get $valid(): Observable<boolean>;
-  get $name(): Observable<string | undefined>;
-  get $value(): Observable<T>;
-  get $state(): Observable<AbstractControlState>;
-  get $errors(): Observable<Map<ValidatorFn, string[]>>;
+  getErrors(): string[];
+
+  $valid(): Observable<boolean>;
+  $name(): Observable<string | undefined>;
+  $value(): Observable<T>;
+  $state(): Observable<AbstractControlState>;
+  $errors(): Observable<Map<ValidatorFn, string[]>>;
+  $loading(): Observable<boolean>;
 
   addLoader(): Promise<ILoader>;
   onDispose(add: () => void): void;
@@ -58,28 +64,30 @@ export interface IAbstractControl<T = any> {
   addValidator(validator: ValidatorFn<this>): void;
   addValidator(arg: ValidatorFn<this> | ValidatorFn<this>[]): void;
 
-  removeValidator(validator: ValidatorFn<this>): void;
+  removeValidator(validator: ValidatorFn<IAbstractControl>): void;
 }
 
-export class AbstractControl<T> implements IAbstractControl<T> {
+export interface IAbstractControlArgs<T = any> {
+  value: T;
+  name: string;
+}
 
-  constructor(...args: any[]) { }
+export abstract class AbstractControl<T = any> implements IAbstractControl<T>, IMixin, IHasStream {
 
-  protected readonly _default: T;
-  protected readonly _subs: Subscription[] = [];
-  protected readonly _onDispose: (() => void)[] = [];
-  protected readonly _validators = new Map<ValidatorFn<this>, { errors: string[]; sub: Subscription; }>();
-  protected readonly _validatorRefs: { [index: string]: ValidatorFn } = {};
-  protected readonly _streams = new Map<ControlStreamCtor, Observable<any>>();
-  protected readonly _$stream = new Subject<IControlStreamEvent>();
-  protected readonly _$loadingQueue = new BehaviorSubject(new Set<string>());
-  protected _getStream<T>({ key, fn }: { key: ControlStreamCtor, fn: () => T }) {
+  __mixins__ = new Map<Function, Record<string, any>>();
+
+  constructor(args: IAbstractControlArgs<T>) {
+    this.#value = args.value;
+  }
+
+  getStream: <T>({ key, fn }: { key: ControlStreamCtor<any>; fn: () => T; }) => Observable<T> = ({ key, fn }) => {
     let stream = this._streams.get(key);
 
     if (!stream) {
-      stream = this._$stream.pipe(
+      stream = this.$stream.pipe(
         filter(ev => ev instanceof key),
         map(() => fn()),
+        startWith(fn()),
         shareReplay()
       );
 
@@ -87,94 +95,190 @@ export class AbstractControl<T> implements IAbstractControl<T> {
     }
 
     return stream;
-  }
+  };
+
+  protected readonly _default!: T;
+  protected readonly _subs: Subscription[] = [];
+  protected readonly _onDispose: (() => void)[] = [];
+  protected readonly _validators = new Map<ValidatorFn<this>, { errors: string[]; sub: Subscription; }>();
+  protected readonly _streams = new Map<ControlStreamCtor, Observable<any>>();
+  protected readonly _$loadingQueue = new BehaviorSubject(new Set<string>());
+
+  readonly $stream = new Subject<IControlStreamEvent>();
 
   #name: string = '';
-  public get name() {
+  getName() {
     return this.#name;
   }
 
-  public set name(value: string) {
+  setName(value: string) {
     if (this.#name === value)
       return;
 
     this.#name = value;
-    this._$stream.next(new NameChange(value));
+    this.$stream.next(new NameChange(value));
   }
 
-  #value: T;
-  public get value() {
+  #value!: T;
+  getValue() {
     return this.#value;
   }
 
-  public set value(value: T) {
+  setValue(value: T) {
     if (value === this.#value)
       return;
 
     this.#value = value;
-    this._$stream.next(new ValueChange(value));
+    this.$stream.next(new ValueChange(value));
   }
 
   #valid = true;
-  public get valid() {
+  getValid() {
     return this.#valid;
   }
 
-  public set valid(value: boolean) {
-    if (value === this.valid)
+  setValid(value: boolean) {
+    if (value === this.#valid)
       return;
 
     this.#valid = value;
-    this._$stream.next(new ValidChange(value));
+    this.$stream.next(new ValidChange(value));
   }
 
   #state = AbstractControlState.pristine;
-  public get dirty() {
+  getDirty() {
     return this.#state === AbstractControlState.dirty;
   }
 
-  public get pristine() {
+  getPristine() {
     return this.#state === AbstractControlState.pristine;
   }
 
-  public set state(value: AbstractControlState) {
+  getState(): AbstractControlState {
+    return this.#state;
+  }
+
+  setState(value: AbstractControlState) {
     if (this.#state === value)
       return;
 
     this.#state = value;
-    this._$stream.next(new StateChange(value));
+    this.$stream.next(new StateChange(value));
   }
 
   #errors_distinct: string[] = [];
-  #error_refs = new Map<ValidatorFn<this>, string[]>();
-  public get errors() {
+  #error_refs = new Map<ValidatorFn, string[]>();
+  getErrors() {
     return this.#errors_distinct;
   }
 
-  $loading: Observable<boolean>;
-
-  get $name() {
-    return this._getStream({ key: NameChange, fn: () => this.name });
+  #loading = this._$loadingQueue.pipe(map(queue => queue.size > 0));
+  $loading(): Observable<boolean> {
+    return this.#loading;
   }
 
-  get $value() {
-    return this._getStream({ key: ValueChange, fn: () => this.value });
+  $name() {
+    return this.getStream({ key: NameChange, fn: () => this.getName() });
   }
 
-  get $errors() {
-    return this._getStream({ key: ErrorsChange, fn: () => this.#error_refs })
+  $value() {
+    return this.getStream({ key: ValueChange, fn: () => this.getValue() });
   }
 
-  get $valid() {
-    return this._getStream({ key: ValidChange, fn: () => this.valid });
+  $errors() {
+    return this.getStream({ key: ErrorsChange, fn: () => this.#error_refs })
   }
 
-  get $state() {
-    return this._getStream({ key: StateChange, fn: () => this.state });
+  $valid() {
+    return this.getStream({ key: ValidChange, fn: () => this.getValid() });
+  }
+
+  $state() {
+    return this.getStream({ key: StateChange, fn: () => this.getState() });
+  }
+
+  addValidator(arg: unknown) {
+    let validators = (Array.isArray(arg) ? arg : [arg]) as ValidatorFn<this>[];
+
+    for (const validator of validators) {
+
+      if (this._validators.has(validator))
+        continue;
+
+      this._validators.set(validator, {
+        errors: [],
+        sub: validator(this).pipe(
+          map(errors => Object.values(errors || {})),
+        ).subscribe({
+          next: async (errors) => {
+
+            let dirty = false;
+            let current = new Set<string>(this.#error_refs.get(validator as ValidatorFn) || []);
+
+            for (const err of current) {
+              if (errors.indexOf(err) === -1) {
+                dirty = true;
+                current.delete(err);
+              }
+            }
+
+            if (errors.length) {
+
+              for (const err of errors)
+                if (!current.has(err)) {
+                  current.add(err);
+                  dirty = true;
+                }
+
+            }
+
+            if (dirty) {
+              const all = this.#error_refs;
+
+              if (current.size)
+                all.set(validator as ValidatorFn, Array.from(current.values()));
+              else
+                all.delete(validator as ValidatorFn);
+
+              this.#error_refs = all;
+              this.#errors_distinct = flattenToDistinctStr(all.values());
+
+              this.$stream.next(new ErrorsChange(this.#error_refs));
+
+            }
+
+          }
+        })
+      });
+    }
+  }
+
+  removeValidator(validator: ValidatorFn): void {
+    if (!validator)
+      return;
+
+    const match = this._validators.get(validator);
+
+    if (!match)
+      return;
+
+    match.sub.unsubscribe();
+
+    let all = this.#error_refs;
+
+    if (all.has(validator)) {
+      all = new Map(all);
+      all.delete(validator);
+
+      this.#error_refs = all;
+      this.#errors_distinct = flattenToDistinctStr(all.values());
+
+      this.$stream.next(new ErrorsChange(all));
+    }
   }
 
   async addLoader(): Promise<ILoader> {
-    const id = crypto.randomUUID();
+    const id = randomUUID();
 
     let queue = new Set(this._$loadingQueue.value);
     queue.add(id);
@@ -212,93 +316,12 @@ export class AbstractControl<T> implements IAbstractControl<T> {
 
   reset(): void {
     if (typeof this._default === 'object')
-      this.value = Object.assign({}, this._default);
+      this.setValue(Object.assign({}, this._default));
     else
-      this.value = this._default;
+      this.setValue(this._default);
 
-    this.state = AbstractControlState.pristine;
+    this.setState(AbstractControlState.pristine);
   }
 
-  addValidator(validators: ValidatorFn<this>[]): void;
-  addValidator(validator: ValidatorFn<this>): void;
-  addValidator(arg: ValidatorFn<this> | ValidatorFn<this>[]): void;
-  addValidator(arg: unknown) {
-    let validators = (Array.isArray(arg) ? arg : [arg]) as ValidatorFn<this>[];
 
-    for (const validator of validators) {
-
-      if (this._validators.has(validator))
-        continue;
-
-      this._validators.set(validator, {
-        errors: [],
-        sub: validator(this).pipe(
-          map(errors => Object.values(errors || {})),
-        ).subscribe({
-          next: async (errors) => {
-
-            let dirty = false;
-            let current = new Set<string>(this.#error_refs.get(validator) || []);
-
-            for (const err of current) {
-              if (errors.indexOf(err) === -1) {
-                dirty = true;
-                current.delete(err);
-              }
-            }
-
-            if (errors.length) {
-
-              for (const err of errors)
-                if (!current.has(err)) {
-                  current.add(err);
-                  dirty = true;
-                }
-
-            }
-
-            if (dirty) {
-              const all = this.#error_refs;
-
-              if (current.size)
-                all.set(validator, Array.from(current.values()));
-              else
-                all.delete(validator);
-
-              this.#error_refs = all;
-              this.#errors_distinct = flattenToDistinctStr(all.values());
-
-              this._$stream.next(new ErrorsChange(this.#error_refs));
-
-            }
-
-          }
-        })
-      });
-    }
-  }
-
-  removeValidator(validator: ValidatorFn<this>): void {
-    if (!validator)
-      return;
-
-    const match = this._validators.get(validator);
-
-    if (!match)
-      return;
-
-    match.sub.unsubscribe();
-
-    let all = this.#error_refs;
-
-    if (all.has(validator)) {
-      all = new Map(all);
-      all.delete(validator);
-
-      this.#error_refs = all;
-      this.#errors_distinct = flattenToDistinctStr(all.values());
-
-      this._$stream.next(new ErrorsChange(all));
-    }
-  }
 }

@@ -1,71 +1,88 @@
-import { AbstractControl } from './abstract-control';
-import {
-  BehaviorSubject,
-  Observable,
-  Subject,
-  Subscription
-  } from 'rxjs';
-import { ValidatorFn } from '../internal/validators';
-import {
-  ControlStreamCtor,
-  ControlStreamEvent,
-  IControlStreamEvent,
-} from '../internal/events';
-
-type Constructor = new (...args: any[]) => {};
 
 interface IMixin {
   __mixins__: Set<string>;
 }
 
+type FactoryFn<T = any, TArgs = any, TSource = any> = (args: TArgs, source: TSource) => T;
+type FactoryFnMerged<T = any, TArgs = any> = <Source = any>(args: TArgs, source: Source) => T & Source;
 
-interface Dependencies {
+function isMixin(obj: any): obj is IMixin {
+  return obj.__mixins__ instanceof Set;
+}
 
-  readonly subs: Subscription[];
-  readonly onDispose: (() => void)[];
+class MixinChainNode<T = any, TArgs = any, TSource = any> {
+  constructor(
+    private key: string,
+    private fns: (FactoryFn | FactoryFnMerged)[] = [],
+  ) { }
 
-  readonly validators: Map<ValidatorFn, { errors: string[]; sub: Subscription; }>;
-  readonly validatorRefs: { [index: string]: ValidatorFn<any> };
+  add<U, UArgs, USource extends TSource>(fn: FactoryFn<U, UArgs, USource> | FactoryFnMerged<U, UArgs>) {
+    this.fns.push(fn);
+    return new MixinChainNode<T & U & USource, TArgs & UArgs, USource>(this.key, this.fns);
+  }
 
-  readonly streams: Map<ControlStreamCtor, Observable<any>>;
-  readonly $stream: Subject<IControlStreamEvent>;
-  readonly $loadingQueue: BehaviorSubject<Set<string>>;
+  build() {
 
-  getStream<T>({ key, fn }: { key: ControlStreamCtor<T>; fn: () => T }): Observable<T>;
-  broadcast(event: ControlStreamEvent): void;
+    const mixin = <Source>(args: TArgs, source: Source) => {
 
+      const __mixins__ = isMixin(source) ? source.__mixins__ : new Set<string>();
+      __mixins__.add(this.key);
+
+      return this.fns.reduce((obj, fn) => fn(args, obj), { ...source, __mixins__ }) as unknown as T & Source;
+
+    };
+
+    const ctor: (args: TArgs) => T = (args: TArgs) => mixin(args, {});
+
+    const typeGuard = (obj: any): obj is (T & Parameters<typeof mixin>[1]) => {
+      return isMixin(obj) && obj.__mixins__.has(this.key);
+    }
+
+
+    return [
+      mixin as FactoryFnMerged<T & Parameters<typeof mixin>[1], TArgs>,
+      ctor,
+      typeGuard
+    ] as const;
+  }
 }
 
 export class ControlFactory {
 
-  #mixins = new Set<string>();
-
-  register<TParent extends typeof AbstractControl, TMerged extends Constructor>(key: string, fn: (Parent: TParent) => TMerged) {
-
-    if (this.#mixins.has(key))
-      throw new Error(`Mixin already registered with key: ${key}`);
-    else
-      this.#mixins.add(key);
-
-    return [
-      function (Parent: TParent) {
-        const ctor = fn(Parent);
-        return class Mixin extends ctor implements IMixin {
-
-          __mixins__ = new Set<string>();
-
-          constructor(...args: any[]) {
-            super(args);
-            this.__mixins__.add(key);
-          }
-        }
-      },
-      function (obj: any): obj is TMerged {
-        return obj.__mixins__ instanceof Set && (obj.__mixins__ as Set<string>).has(key);
-      }
-    ] as const;
+  compose<TSource = unknown>(key: string) {
+    return new MixinChainNode<unknown, unknown, TSource>(key);
   }
 
+  create<T, TArgs>(key: string, fn: FactoryFn<T, TArgs>) {
+
+    const mixin = <Source>(args: TArgs, source: Source) => {
+      let obj = fn(args, source);
+
+      const __mixins__ = isMixin(source) ? source.__mixins__ : new Set<string>();
+      __mixins__.add(key);
+
+      return {
+        ...source,
+        ...obj,
+        ...<IMixin>{ __mixins__ }
+      } as T & Source
+    }
+
+    const typeGuard = (obj: any): obj is T => {
+      return isMixin(obj) && obj.__mixins__.has(key);
+    }
+
+    const ctor = (args: TArgs): T => {
+      return mixin(args, {});
+    }
+
+    return [
+      mixin as FactoryFnMerged<T & Parameters<typeof mixin>[1], TArgs>,
+      ctor,
+      typeGuard
+    ] as const;
+  }
 }
 
 export const CONTROL_FACTORY = new ControlFactory();
+

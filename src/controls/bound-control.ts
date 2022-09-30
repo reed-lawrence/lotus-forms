@@ -1,91 +1,129 @@
-import { Observable } from "rxjs";
-import { FocusedChange, TouchedChange, VisitedChange } from "../internal/events";
-import { AbstractControl } from "./abstract-control";
+import { BehaviorSubject, Observable, Subject } from "rxjs";
+import { ControlStreamCtor, ControlStreamEvent, FocusedChange, TouchedChange, VisitedChange } from "../internal/events";
+import { IHasStream } from "../internal/interfaces";
+import { IMixin } from "../internal/mixin";
+import { AbstractControl, IAbstractControlArgs } from "./abstract-control";
 import { CONTROL_FACTORY } from "./control-factory";
 
-export interface IBoundControlConfig {
+export interface IBoundControlArgs {
   selector: string;
 }
 
-export interface IBoundControl<TElement extends HTMLElement = HTMLElement> {
-  get ele(): TElement;
-
-  get touched(): boolean;
-  set touched(value: boolean);
-
-  get visited(): boolean;
-  set visited(value: boolean);
-
-  get focused(): boolean;
-  set focused(value: boolean);
-
-  get $touched(): Observable<boolean>;
-  get $focused(): Observable<boolean>;
-  get $visited(): Observable<boolean>;
+interface IBoundControlCtx<TElement extends HTMLElement = HTMLElement> {
+  ele?: TElement;
+  touched?: boolean;
+  visited?: boolean;
+  focused?: boolean;
 }
 
-export const [MixinBoundControl, isBoundControl] = CONTROL_FACTORY.register('bound-control', (Parent) => {
-  return class BoundControlMixin<T, TElement extends HTMLElement = HTMLElement> extends Parent<T> implements IBoundControl {
+export interface IBoundControl<TElement extends HTMLElement = HTMLElement> {
+  selector: string;
 
-    readonly #ele: TElement;
+  ele: () => TElement;
 
-    get ele(): TElement {
-      return this.#ele;
+  touched: {
+    (touched: boolean): void;
+    (): boolean
+  }
+
+  getVisited: () => boolean;
+  setVisited: (value: boolean) => void;
+
+  getFocused: () => boolean;
+  setFocused: (value: boolean) => void;
+
+  $touched: () => Observable<boolean>;
+  $focused: () => Observable<boolean>;
+  $visited: () => Observable<boolean>;
+}
+
+export abstract class BoundControlAbstract<TElement extends HTMLElement = HTMLEmbedElement> implements IBoundControl<TElement>, IHasStream, IMixin {
+
+  declare __mixins__: Set<Function>;
+  declare $stream: Subject<ControlStreamEvent<any>>;
+  declare getStream: <T>({ key, fn }: { key: ControlStreamCtor<any>; fn: () => T; }) => Observable<T>;
+
+
+  constructor(args: IBoundControlArgs) {
+    this.selector = args.selector;
+
+    let ele: TElement | null;
+    this.ele = () => {
+
+      if (!ele) {
+        if (!this.selector)
+          throw new Error('No selector provided to BoundControlAbstract');
+
+        ele = document.querySelector(this.selector);
+
+        if (!ele)
+          throw new Error(`No element found matching query selector: ${this.selector}`);
+      }
+
+      return ele;
     }
+  }
 
-    #touched = false;
-    get touched(): boolean {
-      return this.#touched;
-    }
-    set touched(value: boolean) {
-      if (value === this.#touched)
+  selector: string;
+  ele: () => TElement;
+  touched(touched: boolean): void
+  touched(): boolean;
+  touched(touched?: boolean) {
+    if (touched === true || touched === false) {
+      if (touched === touched)
         return;
 
-      this.#touched = value;
-      this._$stream.next(new TouchedChange(value));
+      let ctx = this.__mixins__.get(BoundControlAbstract) || {};
+      this.__mixins__.set(BoundControlAbstract, { ...ctx, touched });
+
+      this.$stream.next(new TouchedChange(touched));
+    }
+    else {
+      return this.__mixins__.get(BoundControlAbstract)?.touched || false;
     }
 
-    #visited = false;
-    get visited(): boolean {
-      return this.#visited;
-    }
-    set visited(value: boolean) {
-      if (value === this.#visited)
-        return;
-
-      this.#visited = value;
-      this._$stream.next(new VisitedChange(value));
-    }
-
-    #focused = false;
-    get focused(): boolean {
-      return this.#focused;
-    }
-    set focused(value: boolean) {
-      if (value === this.#focused)
-        return;
-
-      this.#focused = value;
-      this._$stream.next(new FocusedChange(value));
-    }
-
-    get $touched(): Observable<boolean> {
-      return this._getStream({ key: TouchedChange, fn: () => this.touched });
-    }
-
-    get $focused(): Observable<boolean> {
-      return this._getStream({ key: FocusedChange, fn: () => this.focused });
-    }
-
-    get $visited(): Observable<boolean> {
-      return this._getStream({ key: VisitedChange, fn: () => this.#visited });
-    }
-
-    constructor(...args: any[]) {
-      super(args);
-    }
+    return;
 
   }
-});
 
-export class BoundControl<T, TElement extends HTMLElement = HTMLEmbedElement> extends MixinBoundControl(AbstractControl)<T, TElement> { }
+  getVisited = () => {
+    return this.__mixins__.get(BoundControlAbstract)?.visited || false;
+  }
+
+  setVisited = (visited: boolean) => {
+    if (visited === this.getVisited())
+      return;
+
+    let ctx = this.__mixins__.get(BoundControlAbstract) || {};
+    this.__mixins__.set(BoundControlAbstract, { ...ctx, visited });
+
+    this.$stream.next(new VisitedChange(visited));
+  }
+
+  getFocused = () => {
+    return this.__mixins__.get(BoundControlAbstract)?.focused || false;
+  }
+
+  setFocused = (focused: boolean) => {
+    if (focused === this.getVisited())
+      return;
+
+    let ctx = this.__mixins__.get(BoundControlAbstract) || {};
+    this.__mixins__.set(BoundControlAbstract, { ...ctx, focused });
+
+    this.$stream.next(new FocusedChange(focused));
+  }
+
+  $touched = () => {
+    return this.getStream({ key: TouchedChange, fn: () => this.touched() });
+  }
+
+  $visited = () => {
+    return this.getStream({ key: VisitedChange, fn: () => this.getVisited() });
+  }
+
+  $focused = () => {
+    return this.getStream({ key: FocusedChange, fn: () => this.getFocused() });
+  }
+
+}

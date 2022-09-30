@@ -1,5 +1,5 @@
 import { AbstractControlState, IAbstractControl } from "../controls/abstract-control";
-import { ValidatorFn } from "./validators";
+import { ValidatorFn } from "../validators/validators";
 
 export interface IControlStreamEvent<T = any> {
   value: T;

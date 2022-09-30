@@ -1,65 +1,67 @@
-import { AbstractControl } from './abstract-control';
-import { CONTROL_FACTORY } from './control-factory';
-import { Observable } from 'rxjs';
-import { RequiredChange } from '../internal/events';
-import { Validators } from '../internal/validators';
+import { AbstractControl, IAbstractControlArgs } from './abstract-control';
+import { Observable, Subject } from 'rxjs';
+import { ControlStreamCtor, ControlStreamEvent, DisabledChange, RequiredChange } from '../internal/events';
+import { IMixin } from '../internal/mixin';
+import { IHasStream } from '../internal/interfaces';
+
+export interface IFormControlArgs<T> extends IAbstractControlArgs<T> { }
 
 export interface IFormControl {
 
-  get required(): boolean;
-  set required(value: boolean);
+  getRequired: () => boolean;
+  setRequired: (value: boolean) => void;
 
-  get disabled(): boolean;
-  set disabled(value: boolean);
+  getDisabled: () => boolean;
+  setDisabled: (value: boolean) => void;
 
-  get $required(): Observable<boolean>;
-  get $disabled(): Observable<boolean>;
+  $required: () => Observable<boolean>;
+  $disabled: () => Observable<boolean>;
 
 }
 
-export const [MixinFormControl, isFormControl] = CONTROL_FACTORY.register('form-control', (Parent) => {
-  return class FormControlMixin<T> extends Parent<T> implements IFormControl {
+interface IFormControlCtx {
+  required?: boolean;
+  disabled?: boolean;
+}
 
-    #required = false;
-    public get required() {
-      return this.#required
-    }
+export abstract class FormControlAbstract implements IFormControl, IMixin, IHasStream {
 
-    public set required(value: boolean) {
-      if (value === this.required)
-        return;
+  declare __mixins__: Map<Function, IFormControlCtx>;
+  declare $stream: IHasStream['$stream'];
+  declare getStream: IHasStream['getStream'];
 
-      if (value) {
-        this._validatorRefs.required = Validators.required();
-        this.addValidator(this._validatorRefs.required);
-      }
-      else {
-        this.removeValidator(this._validatorRefs.required);
-        delete this._validatorRefs.required;
-      }
-
-      this.#required = value;
-      this._$stream.next(new RequiredChange(value));
-    }
-
-    get disabled(): boolean {
-      throw new Error("Method not implemented.");
-    }
-    set disabled(value: boolean) {
-      throw new Error("Method not implemented.");
-    }
-    get $required(): Observable<boolean> {
-      throw new Error("Method not implemented.");
-    }
-    get $disabled(): Observable<boolean> {
-      throw new Error("Method not implemented.");
-    }
-
-    constructor(...args: any[]) {
-      super(args);
-    }
-
+  getRequired = () => {
+    return this.__mixins__.get(FormControlAbstract)?.required || false;
   }
-});
+  setRequired = (required: boolean) => {
+    if (required === this.getRequired())
+      return;
 
-export class FormControl<T> extends MixinFormControl(AbstractControl)<T> { }
+    const ctx = this.__mixins__.get(FormControlAbstract);
+    this.__mixins__.set(FormControlAbstract, { ...ctx, required });
+
+    this.$stream.next(new RequiredChange(required));
+  }
+
+  getDisabled = () => {
+    return this.__mixins__.get(FormControlAbstract)?.disabled || false;
+  }
+  setDisabled = (disabled: boolean) => {
+    if (disabled === this.getDisabled())
+      return;
+
+    const ctx = this.__mixins__.get(FormControlAbstract);
+    this.__mixins__.set(FormControlAbstract, { ...ctx, disabled });
+
+    this.$stream.next(new DisabledChange(disabled));
+  }
+
+  $required = () => {
+    return this.getStream({ key: RequiredChange, fn: () => this.getRequired() });
+  }
+
+  $disabled = () => {
+    return this.getStream({ key: DisabledChange, fn: () => this.getDisabled() });
+  }
+
+}
