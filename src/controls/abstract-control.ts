@@ -6,7 +6,8 @@ import {
   shareReplay,
   startWith,
   Subject,
-  Subscription
+  Subscription,
+  skip
 } from 'rxjs';
 import {
   ControlStreamCtor,
@@ -22,7 +23,7 @@ import { ILoader } from '../internal/loader';
 import { ValidatorFn } from '../validators/validators';
 import { randomUUID } from 'crypto';
 import { IMixin } from '../internal/mixin';
-import { IHasStream } from '../internal/interfaces';
+import { IDisposable, IHasState, IHasStream } from '../internal/interfaces';
 
 export enum AbstractControlState {
   pristine,
@@ -31,29 +32,22 @@ export enum AbstractControlState {
 
 export interface IAbstractControl<T = any> {
 
-  getName(): string;
-  setName(value: string): void;
+  name: string;
+  value: T;
+  valid: boolean;
+  state: AbstractControlState;
 
-  getValue(): T;
-  setValue(value: T): void;
+  get dirty(): boolean;
+  get pristine(): boolean;
 
-  getValid(): boolean;
-  setValid(value: boolean): void;
+  get errors(): string[];
 
-  getDirty(): boolean;
-  getPristine(): boolean;
-
-  getState(): AbstractControlState;
-  setState(value: AbstractControlState): void;
-
-  getErrors(): string[];
-
-  $valid(): Observable<boolean>;
-  $name(): Observable<string | undefined>;
-  $value(): Observable<T>;
-  $state(): Observable<AbstractControlState>;
-  $errors(): Observable<Map<ValidatorFn, string[]>>;
-  $loading(): Observable<boolean>;
+  get $valid(): Observable<boolean>;
+  get $name(): Observable<string | undefined>;
+  get $value(): Observable<T>;
+  get $state(): Observable<AbstractControlState>;
+  get $errors(): Observable<Map<ValidatorFn, string[]>>;
+  get $loading(): Observable<boolean>;
 
   addLoader(): Promise<ILoader>;
   onDispose(add: () => void): void;
@@ -67,20 +61,46 @@ export interface IAbstractControl<T = any> {
   removeValidator(validator: ValidatorFn<IAbstractControl>): void;
 }
 
-export interface IAbstractControlArgs<T = any> {
+export interface IAbstractControlArgs<T = any, ControlType extends IAbstractControl<T> = AbstractControl<T>> {
   value: T;
   name: string;
+  equalityOperator?: (a: T, b: T) => boolean;
+  validators?: ValidatorFn<ControlType>[];
 }
 
-export abstract class AbstractControl<T = any> implements IAbstractControl<T>, IMixin, IHasStream {
-
-  __mixins__ = new Map<Function, Record<string, any>>();
+export abstract class AbstractControl<T = any> implements IAbstractControl<T>, IMixin, IHasStream, IDisposable, IHasState {
 
   constructor(args: IAbstractControlArgs<T>) {
     this.#value = args.value;
+
+    this.addValidator(args.validators || []);
+
+    this._subs.push(
+
+      this.$value.pipe(skip(1)).subscribe({
+        next: () => {
+          if (args.equalityOperator)
+            this.state = args.equalityOperator(args.value, this.#value) ? AbstractControlState.pristine : AbstractControlState.dirty;
+          else
+            this.state = args.value === this.#value ? AbstractControlState.pristine : AbstractControlState.dirty;
+        }
+      }),
+
+      this.$errors.subscribe({ next: () => this.valid = this.#errors_distinct.length === 0 })
+    );
   }
 
-  getStream: <T>({ key, fn }: { key: ControlStreamCtor<any>; fn: () => T; }) => Observable<T> = ({ key, fn }) => {
+  protected readonly _default!: T;
+  protected readonly _subs: Subscription[] = [];
+  protected readonly _onDispose: (() => void)[] = [];
+  protected readonly _validators = new Map<ValidatorFn<this>, { errors: string[]; sub: Subscription; }>();
+  protected readonly _streams = new Map<ControlStreamCtor, Observable<any>>();
+  protected readonly _$loadingQueue = new BehaviorSubject(new Set<string>());
+
+  readonly __mixins__ = new Set<Function>();
+  readonly $stream = new Subject<IControlStreamEvent>();
+
+  getStream<TStream>({ key, fn }: { key: ControlStreamCtor<any>; fn: () => TStream; }): Observable<TStream> {
     let stream = this._streams.get(key);
 
     if (!stream) {
@@ -97,21 +117,12 @@ export abstract class AbstractControl<T = any> implements IAbstractControl<T>, I
     return stream;
   };
 
-  protected readonly _default!: T;
-  protected readonly _subs: Subscription[] = [];
-  protected readonly _onDispose: (() => void)[] = [];
-  protected readonly _validators = new Map<ValidatorFn<this>, { errors: string[]; sub: Subscription; }>();
-  protected readonly _streams = new Map<ControlStreamCtor, Observable<any>>();
-  protected readonly _$loadingQueue = new BehaviorSubject(new Set<string>());
-
-  readonly $stream = new Subject<IControlStreamEvent>();
-
   #name: string = '';
-  getName() {
+  get name() {
     return this.#name;
   }
 
-  setName(value: string) {
+  set name(value: string) {
     if (this.#name === value)
       return;
 
@@ -120,11 +131,11 @@ export abstract class AbstractControl<T = any> implements IAbstractControl<T>, I
   }
 
   #value!: T;
-  getValue() {
+  get value() {
     return this.#value;
   }
 
-  setValue(value: T) {
+  set value(value: T) {
     if (value === this.#value)
       return;
 
@@ -133,11 +144,11 @@ export abstract class AbstractControl<T = any> implements IAbstractControl<T>, I
   }
 
   #valid = true;
-  getValid() {
+  get valid() {
     return this.#valid;
   }
 
-  setValid(value: boolean) {
+  set valid(value: boolean) {
     if (value === this.#valid)
       return;
 
@@ -146,19 +157,19 @@ export abstract class AbstractControl<T = any> implements IAbstractControl<T>, I
   }
 
   #state = AbstractControlState.pristine;
-  getDirty() {
+  get dirty() {
     return this.#state === AbstractControlState.dirty;
   }
 
-  getPristine() {
+  get pristine() {
     return this.#state === AbstractControlState.pristine;
   }
 
-  getState(): AbstractControlState {
+  get state(): AbstractControlState {
     return this.#state;
   }
 
-  setState(value: AbstractControlState) {
+  set state(value: AbstractControlState) {
     if (this.#state === value)
       return;
 
@@ -168,33 +179,33 @@ export abstract class AbstractControl<T = any> implements IAbstractControl<T>, I
 
   #errors_distinct: string[] = [];
   #error_refs = new Map<ValidatorFn, string[]>();
-  getErrors() {
+  get errors() {
     return this.#errors_distinct;
   }
 
-  #loading = this._$loadingQueue.pipe(map(queue => queue.size > 0));
-  $loading(): Observable<boolean> {
+  #loading = this._$loadingQueue.pipe(map(queue => queue.size > 0), shareReplay());
+  get $loading(): Observable<boolean> {
     return this.#loading;
   }
 
-  $name() {
-    return this.getStream({ key: NameChange, fn: () => this.getName() });
+  get $name() {
+    return this.getStream({ key: NameChange, fn: () => this.name });
   }
 
-  $value() {
-    return this.getStream({ key: ValueChange, fn: () => this.getValue() });
+  get $value() {
+    return this.getStream({ key: ValueChange, fn: () => this.value });
   }
 
-  $errors() {
+  get $errors() {
     return this.getStream({ key: ErrorsChange, fn: () => this.#error_refs })
   }
 
-  $valid() {
-    return this.getStream({ key: ValidChange, fn: () => this.getValid() });
+  get $valid() {
+    return this.getStream({ key: ValidChange, fn: () => this.valid });
   }
 
-  $state() {
-    return this.getStream({ key: StateChange, fn: () => this.getState() });
+  get $state() {
+    return this.getStream({ key: StateChange, fn: () => this.state });
   }
 
   addValidator(arg: unknown) {
@@ -301,8 +312,10 @@ export abstract class AbstractControl<T = any> implements IAbstractControl<T>, I
     };
   }
 
-  onDispose(add: () => void): void {
-    this._onDispose.push(add);
+  onDispose(subscription: Subscription): void
+  onDispose(add: () => void): void
+  onDispose(arg: (() => void) | Subscription): void {
+    this._onDispose.push(typeof arg === 'function' ? arg : () => arg.unsubscribe());
   }
 
   dispose(): void {
@@ -316,11 +329,11 @@ export abstract class AbstractControl<T = any> implements IAbstractControl<T>, I
 
   reset(): void {
     if (typeof this._default === 'object')
-      this.setValue(Object.assign({}, this._default));
+      this.value = (Object.assign({}, this._default));
     else
-      this.setValue(this._default);
+      this.value = this._default;
 
-    this.setState(AbstractControlState.pristine);
+    this.state = AbstractControlState.pristine;
   }
 
 

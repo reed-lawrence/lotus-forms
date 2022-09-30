@@ -1,67 +1,67 @@
 import { AbstractControl, IAbstractControlArgs } from './abstract-control';
 import { Observable, Subject } from 'rxjs';
 import { ControlStreamCtor, ControlStreamEvent, DisabledChange, RequiredChange } from '../internal/events';
-import { IMixin } from '../internal/mixin';
+import { defineProperties, IMixin } from '../internal/mixin';
 import { IHasStream } from '../internal/interfaces';
-
-export interface IFormControlArgs<T> extends IAbstractControlArgs<T> { }
 
 export interface IFormControl {
 
-  getRequired: () => boolean;
-  setRequired: (value: boolean) => void;
+  required: boolean;
+  disabled: boolean;
 
-  getDisabled: () => boolean;
-  setDisabled: (value: boolean) => void;
-
-  $required: () => Observable<boolean>;
-  $disabled: () => Observable<boolean>;
+  readonly $required: Observable<boolean>;
+  readonly $disabled: Observable<boolean>;
 
 }
 
-interface IFormControlCtx {
-  required?: boolean;
-  disabled?: boolean;
+const symbol = function Foo() { };
+
+export function MixinFormControl(target: IMixin & IHasStream) {
+
+  let _required = false;
+  let _disabled = false;
+
+  target.__mixins__.add(symbol);
+
+  defineProperties<IFormControl>(target, {
+    required: {
+      get() {
+        return _required;
+      },
+      set(required) {
+        if (_required === required)
+          return;
+
+        _required = Boolean(required);
+        target.$stream.next(new RequiredChange(_required));
+      },
+    },
+    disabled: {
+      get() {
+        return _disabled;
+      },
+      set(disabled) {
+        if (_disabled === disabled)
+          return;
+
+        _disabled = Boolean(disabled);
+        target.$stream.next(new DisabledChange(_disabled));
+      },
+    },
+    $required: {
+      get() {
+        return target.getStream({ key: RequiredChange, fn: () => _required });
+      }
+    },
+    $disabled: {
+      get() {
+        return target.getStream({ key: DisabledChange, fn: () => _disabled });
+      }
+    },
+  })
+
 }
 
-export abstract class FormControlAbstract implements IFormControl, IMixin, IHasStream {
-
-  declare __mixins__: Map<Function, IFormControlCtx>;
-  declare $stream: IHasStream['$stream'];
-  declare getStream: IHasStream['getStream'];
-
-  getRequired = () => {
-    return this.__mixins__.get(FormControlAbstract)?.required || false;
-  }
-  setRequired = (required: boolean) => {
-    if (required === this.getRequired())
-      return;
-
-    const ctx = this.__mixins__.get(FormControlAbstract);
-    this.__mixins__.set(FormControlAbstract, { ...ctx, required });
-
-    this.$stream.next(new RequiredChange(required));
-  }
-
-  getDisabled = () => {
-    return this.__mixins__.get(FormControlAbstract)?.disabled || false;
-  }
-  setDisabled = (disabled: boolean) => {
-    if (disabled === this.getDisabled())
-      return;
-
-    const ctx = this.__mixins__.get(FormControlAbstract);
-    this.__mixins__.set(FormControlAbstract, { ...ctx, disabled });
-
-    this.$stream.next(new DisabledChange(disabled));
-  }
-
-  $required = () => {
-    return this.getStream({ key: RequiredChange, fn: () => this.getRequired() });
-  }
-
-  $disabled = () => {
-    return this.getStream({ key: DisabledChange, fn: () => this.getDisabled() });
-  }
-
+export function IsFormControl(obj: any): obj is IFormControl {
+  return obj.__mixins__ instanceof Set && obj.__mixins__.has(symbol);
 }

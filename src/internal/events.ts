@@ -26,3 +26,4 @@ export class ErrorsChange extends ControlStreamEvent<Map<ValidatorFn<any>, strin
 export class RequiredChange extends ControlStreamEvent<boolean> { }
 export class DisabledChange extends ControlStreamEvent<boolean> { }
 export class ReadonlyChange extends ControlStreamEvent<boolean> { }
+export class ResetEvent extends ControlStreamEvent<void> { }

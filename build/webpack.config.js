@@ -35,7 +35,7 @@ module.exports = [
   //   }
   // },
   {
-    entry: `${resolve(__dirname, 'out/demo/demo-1.js')}`,
+    entry: `${resolve(__dirname, 'out/demo/boostrap-5/demo-1.js')}`,
     output: {
       filename: 'demo-1.js',
       path: resolve(__dirname, 'dist'),

@@ -1,4 +1,5 @@
-import { Observable, Subject } from "rxjs";
+import { Observable, Subject, Subscription } from "rxjs";
+import { AbstractControlState } from "../controls/abstract-control";
 import { ControlStreamCtor, ControlStreamEvent } from "./events";
 
 export interface IMixin {
@@ -7,5 +8,15 @@ export interface IMixin {
 
 export interface IHasStream {
   $stream: Subject<ControlStreamEvent>;
-  getStream: <T>({ key, fn }: { key: ControlStreamCtor<T>, fn: () => T }) => Observable<T>;
+  getStream<T>({ key, fn }: { key: ControlStreamCtor<T>, fn: () => T }): Observable<T>;
+}
+
+export interface IDisposable {
+  onDispose(subscription: Subscription): void
+  onDispose(add: () => void): void
+}
+
+export interface IHasState {
+  state: AbstractControlState;
+  $state: Observable<AbstractControlState>;
 }

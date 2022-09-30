@@ -19,12 +19,12 @@ export class Validators {
   }
 
   static required(args: IValidatorArgs = {}): ValidatorFn<any> {
-    return this.create((control) => control.$value().pipe(
+    return this.create((control) => control.$value.pipe(
       map((value) => {
 
         if (!value)
           return {
-            required: `${control.getName()} is required`
+            required: `${control.name} is required`
           } as ValidationError;
         else
           return undefined;
@@ -33,12 +33,12 @@ export class Validators {
   }
 
   static numeric(args: IValidatorArgs = {}): ValidatorFn<any> {
-    return this.create((control) => control.$value().pipe(
+    return this.create((control) => control.$value.pipe(
       map((value) => {
 
         if (!!value && isNaN(Number(value)))
           return {
-            required: `${control.getName()} must be numeric`
+            required: `${control.name} must be numeric`
           } as ValidationError;
         else
           return undefined;
@@ -48,11 +48,11 @@ export class Validators {
 
   static max(number: number, args: IValidatorArgs = {}): ValidatorFn<any> {
     return this.create((control) =>
-      control.$value().pipe(
+      control.$value.pipe(
         map((value) => {
           if (!!value && Number(value) > number)
             return {
-              max: `${control.getName()} cannot exceed ${number}`
+              max: `${control.name} cannot exceed ${number}`
             } as ValidationError
           else
             return undefined;
