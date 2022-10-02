@@ -3,6 +3,7 @@ import { combineLatest, debounceTime, filter, map, Observable, switchMap, tap } 
 import { Validators, ValidationError } from "../../src";
 import { CheckboxControl } from "../../src/controls/inputs/checkbox";
 import { TextInputControl } from "../../src/controls/inputs/text";
+import { InputMask, Masks } from "../../src/internal/input-mask";
 
 import './config';
 
@@ -93,22 +94,7 @@ username.onDispose(
 const phone = new TextInputControl({
   selector: '#phone-number',
   value: '',
-  name: 'Phone Number',
-  mask: (value) => {
-    let str = '';
-
-    const arr = value.match(/[0-9]/g) || [];
-    if (arr.length)
-      str += '(';
-
-    for (let i = 0; i < arr.length; i++)
-      if (i === 2)
-        str += `${arr[i]}) `;
-      else if (i === 5)
-        str += `${arr[i]}-`;
-      else
-        str += arr[i];
-
-    return str;
-  }
+  name: 'Phone Number'
 });
+
+const mask = new InputMask([phone.ele], { mask: Masks.Phone });

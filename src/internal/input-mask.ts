@@ -9,28 +9,82 @@ export const Masks = Object.freeze({
 });
 
 const Keys = Object.freeze({
-  asterisk: 42,
-  zero: 48,
-  nine: 57,
-  a: 65,
-  z: 90,
-  backSpace: 8,
-  tab: 9,
-  delete: 46,
-  left: 37,
-  right: 39,
-  end: 35,
-  home: 36,
-  numberPadZero: 96,
-  numberPadNine: 105,
-  shift: 16,
-  enter: 13,
-  control: 17,
-  escape: 27,
-  v: 86,
-  c: 67,
-  x: 88
+  asterisk: '*',
+  zero: 'Digit0',
+  nine: 'Digit9',
+  a: 'KeyA',
+  z: 'KeyZ',
+  backSpace: 'Backspace',
+  tab: 'Tab',
+  delete: 'Delete',
+  left: 'ArrowLeft',
+  right: 'ArrowRight',
+  end: 'End',
+  home: 'Home',
+  numberPadZero: 'Numpad0',
+  numberPadNine: 'Numpad9',
+  shift_left: 'ShiftLeft',
+  shift_right: 'ShiftRight',
+  enter: 'Enter',
+  control_left: 'ControlLeft',
+  control_right: 'ControlRight',
+  escape: 'Escape',
+  v: 'KeyV',
+  c: 'KeyC',
+  x: 'KeyX'
 });
+
+const KeyCodesNumerics = Object.freeze((() => {
+  const output: { [index: string]: number } = {};
+
+  for (let i = 0; i < 10; i++) {
+    output[`Digit${i}`] = 48 + i;
+    output[`Numpad${i}`] = 96 + i;
+  }
+
+  return output;
+})());
+
+const KeyCodesAlpha = Object.freeze((() => {
+  const output: { [index: string]: number } = {};
+
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  for (let i = 0; i < alphabet.length; i++) {
+    output[`Key${alphabet[i]}`] = 65 + i;
+  }
+
+  return output;
+})());
+
+const KeyCodes = Object.freeze((() => {
+
+  const output: { [index: string]: number } = {
+    '*': 42,
+    'Backspace': 8,
+    'Tab': 9,
+    'Delete': 46,
+    'ArrowLeft': 37,
+    'ArrowRight': 39,
+    'End': 36,
+    'Home': 37,
+    'ShiftLeft': 16,
+    'ShiftRight': 16,
+    'Enter': 13,
+    'ControlLeft': 17,
+    'ControlRight': 17,
+    'Escape': 27,
+    ...KeyCodesAlpha,
+    ...KeyCodesNumerics
+  };
+
+  return output;
+})());
+
+const CodeKeys = Object.freeze(
+  Object.fromEntries(
+    Object.entries(KeyCodes).map(([key, value]) => [value, key])
+  ) as { [index: number]: string }
+)
 
 enum DataType {
   Date = 1,
@@ -41,17 +95,93 @@ enum DataType {
 }
 
 const formatCharacters = ["-", "_", "(", ")", "[", "]", ":", ".", ",", "$", "%", "@", " ", "/"];
-const maskCharacters = ["A", "9", "*"];
+const maskCharacters = ["A", "9", "*"] as const;
+
+type MaskCharacter = typeof maskCharacters[number];
+
+function isMaskCharacter(value: string): value is MaskCharacter {
+  return value === 'A' || value === '9' || value === '*';
+}
+
+interface IInputMaskArgs {
+  mask: string;
+  forceUpper: boolean;
+  forceLower: boolean;
+  useEnterKey: boolean;
+  validateDataType: boolean;
+  dataType: DataType;
+  placeHolder: string;
+}
 
 export class InputMask {
   originalValue = '';
-  mask = '';
+  mask: string[] = [];
   hasMask = false;
   forceUpper = false;
   forceLower = false;
   useEnterKey = false;
   validateDataType = false;
-  dataType: DataType;
+  dataType: DataType = 0;
+
+  constructor(elements: HTMLInputElement[], options: Partial<IInputMaskArgs>) {
+    if (!elements || !options) {
+      return;
+    }
+
+    if (options.mask && options.mask.length > 0) {
+      this.mask = options.mask.split("");
+      this.hasMask = true;
+    }
+
+    if (options.forceUpper) {
+      this.forceUpper = options.forceUpper;
+    }
+
+    if (options.forceLower) {
+      this.forceLower = options.forceLower;
+    }
+
+    if (options.validateDataType) {
+      this.validateDataType = options.validateDataType;
+    }
+
+    if (options.dataType) {
+      this.dataType = options.dataType;
+    }
+
+    if (options.useEnterKey) {
+      this.useEnterKey = options.useEnterKey;
+    }
+
+    for (const element of elements) {
+
+      element.addEventListener('blur', () => {
+        if (!element.getAttribute("readonly") && this.hasMask)
+          this.onLostFocus(element);
+
+      });
+
+      element.addEventListener('keydown', (event) => {
+        console.log(event);
+        if (!element.getAttribute("readonly"))
+          this.onKeyDown(element, event);
+      });
+
+      element.addEventListener('paste', (event) => {
+        if (!element.getAttribute("readonly"))
+          this.onPaste(element, event, undefined);
+      });
+      if (options.placeHolder) {
+        element.setAttribute("placeholder", options.placeHolder);
+      }
+
+      if (element.value.length > 0 && this.hasMask) {
+        this.formatWithMask(element);
+      }
+    }
+
+    document.documentElement.scrollTop = 0;
+  }
 
   between(x: DataType, a: DataType, b: DataType) {
     return x && a && b && x >= a && x <= b;
@@ -127,23 +257,22 @@ export class InputMask {
     return element.selectionEnd || 0;
   }
 
-  isValidCharacter(keyCode: number, maskCharacter: string) {
-    var maskCharacterCode = maskCharacter.charCodeAt(0);
+  /**
+   * 
+   * @param key ex. 'KeyA' | 'Numpad0'
+   * @param maskCharacter
+   * @returns 
+   */
+  isValidCharacter(key: string, maskCharacter: MaskCharacter) {
 
-    if (maskCharacterCode === Keys.asterisk) {
+    if (maskCharacter === '*')
       return true;
-    }
 
-    var isNumber = (keyCode >= Keys.zero && keyCode <= Keys.nine) ||
-      (keyCode >= Keys.numberPadZero && keyCode <= Keys.numberPadNine);
-
-    if (maskCharacterCode === Keys.nine && isNumber) {
+    if (maskCharacter === '9' && !!KeyCodesNumerics[key])
       return true;
-    }
 
-    if (maskCharacterCode === Keys.a && keyCode >= Keys.a && keyCode <= Keys.z) {
+    if (maskCharacter === 'A' && !!KeyCodesAlpha[key])
       return true;
-    }
 
     return false;
   }
@@ -201,7 +330,7 @@ export class InputMask {
     }
   }
 
-  checkAndRemoveMaskCharacters(element: HTMLInputElement, index: number, keyCode: number) {
+  checkAndRemoveMaskCharacters(element: HTMLInputElement, index: number, key: string) {
     if (element.value.length > 0) {
       while (true) {
 
@@ -214,11 +343,11 @@ export class InputMask {
 
         this.removeCharacterAtIndex(element, index);
 
-        if (keyCode === Keys.backSpace)
+        if (key === Keys.backSpace)
           index -= 1;
 
 
-        if (keyCode === Keys.delete)
+        if (key === Keys.delete)
           index += 1;
       }
     }
@@ -266,16 +395,17 @@ export class InputMask {
         var maskCharacter = mask[i];
         const maskCharacterCode = maskCharacter.charCodeAt(0);
 
-        if (maskCharacters.indexOf(maskCharacter) > -1) {
-          if (elementCharacter === maskCharacter || maskCharacterCode === Keys.asterisk) {
+        if (isMaskCharacter(maskCharacter)) {
+          if (elementCharacter === maskCharacter || maskCharacterCode === KeyCodes['*'])
             continue;
-          } else {
+          else {
             element.value = "";
-
             return;
           }
-        } else {
-          if (maskCharacterCode === Keys.a) {
+        } 
+        
+        else {
+          if (maskCharacterCode === KeyCodes.a) {
             if (elementCharacterCharCode <= Keys.a || elementCharacterCharCode >= Keys.z) {
               element.value = "";
 
@@ -395,6 +525,51 @@ export class InputMask {
     return false;
   }
 
+  onPaste(element: HTMLInputElement, event?: ClipboardEvent, data?: string) {
+    var pastedText = "";
+
+    if (data != null && data !== "")
+      pastedText = data;
+    else if (event != null && event.clipboardData && event.clipboardData.getData)
+      pastedText = event.clipboardData.getData("text/plain");
+
+
+    if (pastedText != null && pastedText !== "") {
+      for (var j = 0; j < formatCharacters.length; j++) {
+        pastedText.replace(formatCharacters[j], "");
+      }
+
+      for (var i = 0; i < pastedText.length; i++) {
+        if (formatCharacters.indexOf(pastedText[i]) > -1) {
+          continue;
+        }
+
+        const keyDownEvent = new KeyboardEvent('keydown', {
+          bubbles: true,
+          cancelable: true,
+          key: pastedText[i]
+        });
+
+        this.onKeyDown(element, keyDownEvent);
+      }
+    }
+
+    return false;
+  };
+
+  formatWithMask(element: HTMLInputElement) {
+    var value = element.value;
+
+    if (this.between(this.dataType, 1, 5)) {
+      value = this.getFormattedDateTime(element.value);
+    }
+
+    element.value = "";
+
+    if (value != null && value !== "") {
+      this.onPaste(element, undefined, value);
+    }
+  }
 
 }
 
