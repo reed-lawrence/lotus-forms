@@ -21,7 +21,6 @@ import {
 import { flattenToDistinctStr } from '../internal/utils';
 import { ILoader } from '../internal/loader';
 import { ValidatorFn } from '../validators/validators';
-import { randomUUID } from 'crypto';
 import { IMixin } from '../internal/mixin';
 import { IDisposable, IHasState, IHasStream } from '../internal/interfaces';
 
@@ -72,6 +71,7 @@ export abstract class AbstractControl<T = any> implements IAbstractControl<T>, I
 
   constructor(args: IAbstractControlArgs<T>) {
     this.#value = args.value;
+    this.#name = args.name;
 
     this.addValidator(args.validators || []);
 
@@ -289,7 +289,7 @@ export abstract class AbstractControl<T = any> implements IAbstractControl<T>, I
   }
 
   async addLoader(): Promise<ILoader> {
-    const id = randomUUID();
+    const id = (crypto as any).randomUUID();
 
     let queue = new Set(this._$loadingQueue.value);
     queue.add(id);

@@ -17,13 +17,13 @@
       transform: translateY(-50%);
     }
 
-    /* .input-group~.spinner-container {
+    .form-control ~ .spinner-container {
       visibility: hidden;
     }
 
-    .input-group.is-loading~.spinner-container {
+    .form-control.loading~.spinner-container {
       visibility: visible;
-    } */
+    }
   </style>
 </head>
 
@@ -44,14 +44,18 @@
         <div class="input-group has-validation">
           <span class="input-group-text">@</span>
           <input type="text" class="form-control" id="username">
-          <!-- <div class="spinner-container">
+          <div class="spinner-container">
             <div class="spinner-border spinner-border-sm text-primary" role="status">
               <span class="visually-hidden">Loading...</span>
             </div>
-          </div> -->
+          </div>
         </div>
       </div>
-      <div class="col-md-6">
+      <div class="col-md-2">
+        <label for="phone-number" class="form-label">Phone</label>
+        <input type="text" class="form-control" id="phone-number">
+      </div>
+      <div class="col-md-4">
         <label for="validationServer03" class="form-label">City</label>
         <input type="text" class="form-control is-invalid" id="validationServer03"
           aria-describedby="validationServer03Feedback" required>

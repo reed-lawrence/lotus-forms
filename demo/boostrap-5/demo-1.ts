@@ -1,5 +1,6 @@
-import { combineLatest, filter, map, tap } from "rxjs";
-import { Validators } from "../../src";
+import { combineLatest, debounceTime, filter, map, Observable, switchMap, tap } from "rxjs";
+
+import { Validators, ValidationError } from "../../src";
 import { CheckboxControl } from "../../src/controls/inputs/checkbox";
 import { TextInputControl } from "../../src/controls/inputs/text";
 
@@ -7,11 +8,12 @@ import './config';
 
 const first_name = new TextInputControl({
   selector: '#first-name',
-  value: '',
+  value: 'Reed',
   name: 'First Name',
   validators: [
     Validators.required()
-  ]
+  ],
+  equalityOperator: (a, b) => a.toLowerCase().trim() === b.toLowerCase().trim()
 });
 
 const last_name = new TextInputControl({
@@ -28,7 +30,27 @@ const username = new TextInputControl({
   value: '',
   name: 'Username',
   validators: [
-    Validators.required()
+    Validators.required(),
+    Validators.create((control) => control.$value.pipe(
+      debounceTime(50),
+      switchMap((value) => new Promise<ValidationError | undefined>(async (resolve, reject) => {
+
+        const loader = await control.addLoader();
+
+        setTimeout(() => {
+
+          if (value === 'reed-lawrence')
+            resolve(undefined);
+          else
+            resolve({
+              invalid_username: `Invalid username`
+            });
+
+          loader.remove();
+        }, 500)
+      }))
+    )
+    )
   ]
 });
 
@@ -50,8 +72,14 @@ const terms_and_conditions = new CheckboxControl({
 });
 
 username.onDispose(
-  combineLatest([username.$touched, first_name.$value, last_name.$value]).pipe(
+  combineLatest([
+    username.$touched,
+    first_name.$value,
+    last_name.$value
+  ]).pipe(
+
     filter(([touched]) => !touched)
+
   ).subscribe({
     next: ([touched, fname, lname]) => {
       if (fname && lname)
@@ -61,3 +89,26 @@ username.onDispose(
     }
   })
 );
+
+const phone = new TextInputControl({
+  selector: '#phone-number',
+  value: '',
+  name: 'Phone Number',
+  mask: (value) => {
+    let str = '';
+
+    const arr = value.match(/[0-9]/g) || [];
+    if (arr.length)
+      str += '(';
+
+    for (let i = 0; i < arr.length; i++)
+      if (i === 2)
+        str += `${arr[i]}) `;
+      else if (i === 5)
+        str += `${arr[i]}-`;
+      else
+        str += arr[i];
+
+    return str;
+  }
+});
