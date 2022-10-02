@@ -8,6 +8,32 @@ export const Masks = Object.freeze({
   Phone: "(999) 999-9999"
 });
 
+const Keys = {
+  asterisk: {code: , key: ['*']},
+  zero: 'Digit0',
+  nine: 'Digit9',
+  a: 'KeyA',
+  z: 'KeyZ',
+  backSpace: 'Backspace',
+  tab: 'Tab',
+  delete: 'Delete',
+  left: 'ArrowLeft',
+  right: 'ArrowRight',
+  end: 'End',
+  home: 'Home',
+  numberPadZero: 'Numpad0',
+  numberPadNine: 'Numpad9',
+  shift_left: 'ShiftLeft',
+  shift_right: 'ShiftRight',
+  enter: 'Enter',
+  control_left: 'ControlLeft',
+  control_right: 'ControlRight',
+  escape: 'Escape',
+  v: 'KeyV',
+  c: 'KeyC',
+  x: 'KeyX'
+}
+
 const Keys = Object.freeze({
   asterisk: '*',
   zero: 'Digit0',
@@ -56,6 +82,12 @@ const KeyCodesAlpha = Object.freeze((() => {
   return output;
 })());
 
+const KeyCodesCutCopyPaste: Readonly<{ [index: string]: number }> = Object.freeze({
+  'KeyC': KeyCodesAlpha['KeyC'],
+  'KeyX': KeyCodesAlpha['KeyX'],
+  'KeyV': KeyCodesAlpha['KeyV'],
+});
+
 const KeyCodes = Object.freeze((() => {
 
   const output: { [index: string]: number } = {
@@ -80,6 +112,12 @@ const KeyCodes = Object.freeze((() => {
   return output;
 })());
 
+const KeyCodesMovement: Readonly<{ [index: string]: number }> = Object.freeze({
+  'ArrowLeft': 37,
+  'ArrowRight': 39,
+  'Tab': 9,
+})
+
 const CodeKeys = Object.freeze(
   Object.fromEntries(
     Object.entries(KeyCodes).map(([key, value]) => [value, key])
@@ -97,7 +135,7 @@ enum DataType {
 const formatCharacters = ["-", "_", "(", ")", "[", "]", ":", ".", ",", "$", "%", "@", " ", "/"];
 const maskCharacters = ["A", "9", "*"] as const;
 
-type MaskCharacter = typeof maskCharacters[number];
+type MaskCharacter = typeof maskCharacters[number] | string;
 
 function isMaskCharacter(value: string): value is MaskCharacter {
   return value === 'A' || value === '9' || value === '*';
@@ -115,7 +153,7 @@ interface IInputMaskArgs {
 
 export class InputMask {
   originalValue = '';
-  mask: string[] = [];
+  mask: (MaskCharacter)[] = [];
   hasMask = false;
   forceUpper = false;
   forceLower = false;
@@ -330,7 +368,7 @@ export class InputMask {
     }
   }
 
-  checkAndRemoveMaskCharacters(element: HTMLInputElement, index: number, key: string) {
+  checkAndRemoveMaskCharacters(element: HTMLInputElement, index: number, key: number) {
     if (element.value.length > 0) {
       while (true) {
 
@@ -343,11 +381,11 @@ export class InputMask {
 
         this.removeCharacterAtIndex(element, index);
 
-        if (key === Keys.backSpace)
+        if (key === KeyCodes[Keys.backSpace])
           index -= 1;
 
 
-        if (key === Keys.delete)
+        if (key === KeyCodes[Keys.delete])
           index += 1;
       }
     }
@@ -393,28 +431,25 @@ export class InputMask {
         const elementCharacterCharCode = elementCharacter.charCodeAt(0);
 
         var maskCharacter = mask[i];
-        const maskCharacterCode = maskCharacter.charCodeAt(0);
 
         if (isMaskCharacter(maskCharacter)) {
-          if (elementCharacter === maskCharacter || maskCharacterCode === KeyCodes['*'])
+          if (elementCharacter === maskCharacter || maskCharacter === '*')
             continue;
           else {
             element.value = "";
             return;
           }
-        } 
-        
-        else {
-          if (maskCharacterCode === KeyCodes.a) {
-            if (elementCharacterCharCode <= Keys.a || elementCharacterCharCode >= Keys.z) {
-              element.value = "";
+        }
 
+        else {
+          if (maskCharacter === 'A') {
+            if (!!KeyCodesNumerics[CodeKeys[elementCharacterCharCode]]) {
+              element.value = "";
               return;
             }
-          } else if (maskCharacterCode === Keys.nine) {
-            if (elementCharacterCharCode <= Keys.zero || elementCharacterCharCode >= Keys.nine) {
+          } else if (maskCharacter === '9') {
+            if (!!KeyCodesAlpha[CodeKeys[elementCharacterCharCode]]) {
               element.value = "";
-
               return;
             }
           }
@@ -431,26 +466,24 @@ export class InputMask {
 
     const { dataType, mask, useEnterKey, hasMask, forceLower, forceUpper } = this;
 
-    var key = event.key.charCodeAt(0);
+    let keyCode = KeyCodes[event.code];
 
-    var copyCutPasteKeys = [Keys.v, Keys.c, Keys.x].indexOf(key) > -1 && event.ctrlKey;
+    const copyCutPasteKeys = !!KeyCodesCutCopyPaste[event.code] && event.ctrlKey;
 
-    var movementKeys = [Keys.left, Keys.right, Keys.tab].indexOf(key) > -1;
+    const movementKeys = !!KeyCodesMovement[event.code];
 
-    var modifierKeys = event.ctrlKey || event.shiftKey;
+    const modifierKeys = event.ctrlKey || event.shiftKey;
 
-    if (copyCutPasteKeys || movementKeys || modifierKeys) {
-
+    if (copyCutPasteKeys || movementKeys || modifierKeys)
       return true;
-    }
+
 
     if (element.selectionStart === 0 && element.selectionEnd === element.value.length) {
       this.originalValue = element.value;
-
       element.value = "";
     }
 
-    if (key === Keys.escape) {
+    if (keyCode === KeyCodes[Keys.escape]) {
       if (this.originalValue !== "") {
         element.value = this.originalValue;
       }
@@ -458,15 +491,18 @@ export class InputMask {
       return true;
     }
 
-    if (key === Keys.backSpace || key === Keys.delete) {
-      if (key === Keys.backSpace) {
-        this.checkAndRemoveMaskCharacters(element, this.getCursorPosition(element) - 1, key);
+    const isBackspace = Keys.backSpace === event.code;
+    const isDelete = Keys.delete === event.code;
+
+    if (isBackspace || isDelete) {
+      if (isBackspace) {
+        this.checkAndRemoveMaskCharacters(element, this.getCursorPosition(element) - 1, keyCode);
 
         this.removeCharacterAtIndex(element, this.getCursorPosition(element) - 1);
       }
 
-      if (key === Keys.delete) {
-        this.checkAndRemoveMaskCharacters(element, this.getCursorPosition(element), key);
+      if (isDelete) {
+        this.checkAndRemoveMaskCharacters(element, this.getCursorPosition(element), keyCode);
 
         this.removeCharacterAtIndex(element, this.getCursorPosition(element));
       }
@@ -476,7 +512,7 @@ export class InputMask {
       return false;
     }
 
-    if (dataType && useEnterKey && key === Keys.enter) {
+    if (dataType && useEnterKey && event.code === Keys.enter) {
       if (dataType >= 1 && dataType <= 5) {
         element.value = this.getFormattedDateTime(element.value);
       }
@@ -496,28 +532,27 @@ export class InputMask {
       this.checkAndInsertMaskCharacters(element, this.getCursorPosition(element));
     }
 
-    if (this.isValidCharacter(key, mask[this.getCursorPosition(element)])) {
-      if (key >= Keys.numberPadZero && key <= Keys.numberPadNine) {
-        key = key - 48;
-      }
+    if (this.isValidCharacter(event.code, mask[this.getCursorPosition(element)])) {
+      if (keyCode >= KeyCodes[Keys.numberPadZero] && keyCode <= KeyCodes[Keys.numberPadNine])
+        keyCode -= 48;
 
       var character = event.shiftKey
-        ? String.fromCharCode(key).toUpperCase()
-        : String.fromCharCode(key).toLowerCase();
+        ? String.fromCharCode(keyCode).toUpperCase()
+        : String.fromCharCode(keyCode).toLowerCase();
 
-      if (forceUpper) {
+      if (forceUpper)
         character = character.toUpperCase();
-      }
 
-      if (forceLower) {
+
+      if (forceLower)
         character = character.toLowerCase();
-      }
+
 
       this.insertCharacterAtIndex(element, this.getCursorPosition(element), character);
 
-      if (hasMask) {
+      if (hasMask)
         this.checkAndInsertMaskCharacters(element, this.getCursorPosition(element));
-      }
+
     }
 
     event.preventDefault();
