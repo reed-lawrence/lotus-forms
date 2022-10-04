@@ -3,7 +3,7 @@ import { combineLatest, debounceTime, filter, map, Observable, switchMap, tap } 
 import { Validators, ValidationError } from "../../src";
 import { CheckboxControl } from "../../src/controls/inputs/checkbox";
 import { TextInputControl } from "../../src/controls/inputs/text";
-import { InputMask, Masks } from "../../src/internal/input-mask";
+import { CurrencyMask, InputMask, Masks } from "../../src/internal/input-mask";
 
 import './config';
 
@@ -97,4 +97,4 @@ const phone = new TextInputControl({
   name: 'Phone Number'
 });
 
-const mask = new InputMask([phone.ele], { mask: Masks.Phone });
+const mask = new CurrencyMask({ element: phone.ele });

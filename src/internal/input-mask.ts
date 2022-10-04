@@ -1,128 +1,83 @@
 export const Masks = Object.freeze({
-  Date: "99/99/9999",
-  DateTime: "99/99/9999 99:99:99",
-  DateTimeShort: "99/99/9999 99:99",
-  Time: "99:99:99",
-  TimeShort: "99:99",
-  Ssn: "999-99-9999",
-  Phone: "(999) 999-9999"
+  Date: '99/99/9999',
+  DateTime: '99/99/9999 99:99:99',
+  DateTimeShort: '99/99/9999 99:99',
+  Time: '99:99:99',
+  TimeShort: '99:99',
+  Ssn: '999-99-9999',
+  Phone: '(999) 999-9999'
 });
 
 const Keys = {
-  asterisk: {code: , key: ['*']},
-  zero: 'Digit0',
-  nine: 'Digit9',
-  a: 'KeyA',
-  z: 'KeyZ',
-  backSpace: 'Backspace',
-  tab: 'Tab',
-  delete: 'Delete',
-  left: 'ArrowLeft',
-  right: 'ArrowRight',
-  end: 'End',
-  home: 'Home',
-  numberPadZero: 'Numpad0',
-  numberPadNine: 'Numpad9',
-  shift_left: 'ShiftLeft',
-  shift_right: 'ShiftRight',
-  enter: 'Enter',
-  control_left: 'ControlLeft',
-  control_right: 'ControlRight',
-  escape: 'Escape',
-  v: 'KeyV',
-  c: 'KeyC',
-  x: 'KeyX'
-}
+  '0': { code: 48, key: 'Digit0' },
+  '1': { code: 49, key: 'Digit1' },
+  '2': { code: 50, key: 'Digit2' },
+  '3': { code: 51, key: 'Digit3' },
+  '4': { code: 52, key: 'Digit4' },
+  '5': { code: 53, key: 'Digit5' },
+  '6': { code: 54, key: 'Digit6' },
+  '7': { code: 55, key: 'Digit7' },
+  '8': { code: 56, key: 'Digit8' },
+  '9': { code: 57, key: 'Digit9' },
+  numpad_0: { code: 96, key: 'Numpad0' },
+  numpad_1: { code: 97, key: 'Numpad1' },
+  numpad_2: { code: 98, key: 'Numpad2' },
+  numpad_3: { code: 99, key: 'Numpad3' },
+  numpad_4: { code: 100, key: 'Numpad4' },
+  numpad_5: { code: 101, key: 'Numpad5' },
+  numpad_6: { code: 102, key: 'Numpad6' },
+  numpad_7: { code: 103, key: 'Numpad7' },
+  numpad_8: { code: 104, key: 'Numpad8' },
+  numpad_9: { code: 105, key: 'Numpad9' },
+  A: { code: 65, key: 'KeyA' },
+  B: { code: 66, key: 'KeyB' },
+  C: { code: 67, key: 'KeyC' },
+  D: { code: 68, key: 'KeyD' },
+  E: { code: 69, key: 'KeyE' },
+  F: { code: 70, key: 'KeyF' },
+  G: { code: 71, key: 'KeyG' },
+  H: { code: 72, key: 'KeyH' },
+  I: { code: 73, key: 'KeyI' },
+  J: { code: 74, key: 'KeyJ' },
+  K: { code: 75, key: 'KeyK' },
+  L: { code: 76, key: 'KeyL' },
+  M: { code: 77, key: 'KeyM' },
+  N: { code: 78, key: 'KeyN' },
+  O: { code: 79, key: 'KeyO' },
+  P: { code: 80, key: 'KeyP' },
+  Q: { code: 81, key: 'KeyQ' },
+  R: { code: 82, key: 'KeyR' },
+  S: { code: 83, key: 'KeyS' },
+  T: { code: 84, key: 'KeyT' },
+  U: { code: 85, key: 'KeyU' },
+  V: { code: 86, key: 'KeyV' },
+  W: { code: 87, key: 'KeyW' },
+  X: { code: 88, key: 'KeyX' },
+  Y: { code: 89, key: 'KeyY' },
+  Z: { code: 90, key: 'KeyZ' },
+  asterisk: { code: 42, key: '*' },
+  backSpace: { code: 8, key: 'Backspace' },
+  tab: { code: 9, key: 'Tab' },
+  delete: { code: 46, key: 'Delete' },
+  left: { code: 37, key: 'ArrowLeft' },
+  right: { code: 39, key: 'ArrowRight' },
+  end: { code: 35, key: 'End' },
+  home: { code: 36, key: 'Home' },
+  shift_left: { code: 16, key: 'ShiftLeft' },
+  shift_right: { code: 16, key: 'ShiftRight' },
+  enter: { code: 13, key: 'Enter' },
+  control_left: { code: 17, key: 'ControlLeft' },
+  control_right: { code: 17, key: 'ControlRight' },
+  escape: { code: 27, key: 'Escape' },
+  space: { code: 32, key: 'Space' }
+} as const;
 
-const Keys = Object.freeze({
-  asterisk: '*',
-  zero: 'Digit0',
-  nine: 'Digit9',
-  a: 'KeyA',
-  z: 'KeyZ',
-  backSpace: 'Backspace',
-  tab: 'Tab',
-  delete: 'Delete',
-  left: 'ArrowLeft',
-  right: 'ArrowRight',
-  end: 'End',
-  home: 'Home',
-  numberPadZero: 'Numpad0',
-  numberPadNine: 'Numpad9',
-  shift_left: 'ShiftLeft',
-  shift_right: 'ShiftRight',
-  enter: 'Enter',
-  control_left: 'ControlLeft',
-  control_right: 'ControlRight',
-  escape: 'Escape',
-  v: 'KeyV',
-  c: 'KeyC',
-  x: 'KeyX'
-});
+const KeyCodes = Object.fromEntries(
+  Object.entries(Keys).map(([key, value]) => [value.key, value.code])
+);
 
-const KeyCodesNumerics = Object.freeze((() => {
-  const output: { [index: string]: number } = {};
-
-  for (let i = 0; i < 10; i++) {
-    output[`Digit${i}`] = 48 + i;
-    output[`Numpad${i}`] = 96 + i;
-  }
-
-  return output;
-})());
-
-const KeyCodesAlpha = Object.freeze((() => {
-  const output: { [index: string]: number } = {};
-
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  for (let i = 0; i < alphabet.length; i++) {
-    output[`Key${alphabet[i]}`] = 65 + i;
-  }
-
-  return output;
-})());
-
-const KeyCodesCutCopyPaste: Readonly<{ [index: string]: number }> = Object.freeze({
-  'KeyC': KeyCodesAlpha['KeyC'],
-  'KeyX': KeyCodesAlpha['KeyX'],
-  'KeyV': KeyCodesAlpha['KeyV'],
-});
-
-const KeyCodes = Object.freeze((() => {
-
-  const output: { [index: string]: number } = {
-    '*': 42,
-    'Backspace': 8,
-    'Tab': 9,
-    'Delete': 46,
-    'ArrowLeft': 37,
-    'ArrowRight': 39,
-    'End': 36,
-    'Home': 37,
-    'ShiftLeft': 16,
-    'ShiftRight': 16,
-    'Enter': 13,
-    'ControlLeft': 17,
-    'ControlRight': 17,
-    'Escape': 27,
-    ...KeyCodesAlpha,
-    ...KeyCodesNumerics
-  };
-
-  return output;
-})());
-
-const KeyCodesMovement: Readonly<{ [index: string]: number }> = Object.freeze({
-  'ArrowLeft': 37,
-  'ArrowRight': 39,
-  'Tab': 9,
-})
-
-const CodeKeys = Object.freeze(
-  Object.fromEntries(
-    Object.entries(KeyCodes).map(([key, value]) => [value, key])
-  ) as { [index: number]: string }
-)
+const KEYS_CUT_COPY_PASTE = new Set<number>([Keys.C.code, Keys.X.code, Keys.V.code]);
+const KEYS_MOVEMENT = new Set<number>([Keys.left.code, Keys.right.code, Keys.tab.code]);
 
 enum DataType {
   Date = 1,
@@ -132,14 +87,52 @@ enum DataType {
   TimeShort,
 }
 
-const formatCharacters = ["-", "_", "(", ")", "[", "]", ":", ".", ",", "$", "%", "@", " ", "/"];
-const maskCharacters = ["A", "9", "*"] as const;
+const formatCharacters = ['-', '_', '(', ')', '[', ']', ':', '.', ',', '$', '%', '@', ' ', '/'] as const;
+const formatCharacters_unicode = formatCharacters.map(o => o.charCodeAt(0));
 
-type MaskCharacter = typeof maskCharacters[number] | string;
+const maskCharacters = ['A', '9', '*'] as const;
 
-function isMaskCharacter(value: string): value is MaskCharacter {
+type MaskCharacter = typeof maskCharacters[number];
+type FormatCharacter = typeof formatCharacters[number];
+
+function isMaskCharacter(value: any): value is MaskCharacter {
   return value === 'A' || value === '9' || value === '*';
 }
+
+function isFormatCharacter(value: any): value is FormatCharacter {
+  if (typeof value === 'string')
+    return formatCharacters.includes(value as FormatCharacter);
+  else
+    return formatCharacters_unicode.includes(value);
+}
+
+function isCutCopyPasteKey(code: number) {
+  return KEYS_CUT_COPY_PASTE.has(code);
+}
+
+const isNumericChar = (() => {
+
+  const ll1 = Keys['0'].code;
+  const ul1 = Keys['9'].code;
+  const ll2 = Keys.numpad_0.code;
+  const ul2 = Keys.numpad_9.code;
+
+  return (code: number) => {
+    const result = (code >= ll1 && code <= ul1) || (code >= ll2 && code <= ul2);
+    console.log(code, 'is numeric');
+    return result;
+  };
+
+})();
+
+const isAlphabeticChar = (() => {
+
+  const ll = Keys.A.code;
+  const ul = Keys.Z.code;
+
+  return (code: number) => code >= ll && code <= ul;
+
+})();
 
 interface IInputMaskArgs {
   mask: string;
@@ -153,7 +146,8 @@ interface IInputMaskArgs {
 
 export class InputMask {
   originalValue = '';
-  mask: (MaskCharacter)[] = [];
+  mask: (MaskCharacter | FormatCharacter)[] = [];
+  mask_keyCodes: number[] = [];
   hasMask = false;
   forceUpper = false;
   forceLower = false;
@@ -167,7 +161,8 @@ export class InputMask {
     }
 
     if (options.mask && options.mask.length > 0) {
-      this.mask = options.mask.split("");
+      this.mask = options.mask.split('') as (MaskCharacter | FormatCharacter)[];
+      this.mask_keyCodes = this.mask.map(str => str.charCodeAt(0));
       this.hasMask = true;
     }
 
@@ -193,24 +188,18 @@ export class InputMask {
 
     for (const element of elements) {
 
-      element.addEventListener('blur', () => {
-        if (!element.getAttribute("readonly") && this.hasMask)
-          this.onLostFocus(element);
-
-      });
-
       element.addEventListener('keydown', (event) => {
         console.log(event);
-        if (!element.getAttribute("readonly"))
+        if (!element.getAttribute('readonly'))
           this.onKeyDown(element, event);
       });
 
       element.addEventListener('paste', (event) => {
-        if (!element.getAttribute("readonly"))
+        if (!element.getAttribute('readonly'))
           this.onPaste(element, event, undefined);
       });
       if (options.placeHolder) {
-        element.setAttribute("placeholder", options.placeHolder);
+        element.setAttribute('placeholder', options.placeHolder);
       }
 
       if (element.value.length > 0 && this.hasMask) {
@@ -252,7 +241,7 @@ export class InputMask {
           ));
         }
       } else {
-        var timeSegments = value.split(":");
+        var timeSegments = value.split(':');
 
         var utcHours = timeSegments.length > 0 ? Number(timeSegments[0]) : 0;
         var utcMinutes = timeSegments.length > 1 ? Number(timeSegments[1]) : 0;
@@ -268,26 +257,26 @@ export class InputMask {
   getFormattedDateTime(value: string) {
     var date = this.parseDate(value);
 
-    var day = date.getUTCDate() < 10 ? "0" + date.getUTCDate() : date.getUTCDate();
-    var month = (date.getUTCMonth() + 1) < 10 ? "0" + (date.getUTCMonth() + 1) : (date.getUTCMonth() + 1);
+    var day = date.getUTCDate() < 10 ? '0' + date.getUTCDate() : date.getUTCDate();
+    var month = (date.getUTCMonth() + 1) < 10 ? '0' + (date.getUTCMonth() + 1) : (date.getUTCMonth() + 1);
     var year = date.getUTCFullYear();
-    var hours = date.getUTCHours() < 10 ? "0" + date.getUTCHours() : date.getUTCHours();
-    var minutes = date.getUTCMinutes() < 10 ? "0" + date.getUTCMinutes() : date.getUTCMinutes();
-    var seconds = date.getUTCSeconds() < 10 ? "0" + date.getUTCSeconds() : date.getUTCSeconds();
+    var hours = date.getUTCHours() < 10 ? '0' + date.getUTCHours() : date.getUTCHours();
+    var minutes = date.getUTCMinutes() < 10 ? '0' + date.getUTCMinutes() : date.getUTCMinutes();
+    var seconds = date.getUTCSeconds() < 10 ? '0' + date.getUTCSeconds() : date.getUTCSeconds();
 
     switch (this.dataType) {
       case DataType.Date:
-        return month + "/" + day + "/" + year;
+        return month + '/' + day + '/' + year;
       case DataType.DateTime:
-        return month + "/" + day + "/" + year + " " + hours + ":" + minutes + ":" + seconds;
+        return month + '/' + day + '/' + year + ' ' + hours + ':' + minutes + ':' + seconds;
       case DataType.DateTimeShort:
-        return month + "/" + day + "/" + year + " " + hours + ":" + minutes;
+        return month + '/' + day + '/' + year + ' ' + hours + ':' + minutes;
       case DataType.Time:
-        return hours + ":" + minutes + ":" + seconds;
+        return hours + ':' + minutes + ':' + seconds;
       case DataType.TimeShort:
-        return hours + ":" + minutes;
+        return hours + ':' + minutes;
       default:
-        return "";
+        return '';
     }
   }
 
@@ -295,24 +284,37 @@ export class InputMask {
     return element.selectionEnd || 0;
   }
 
-  /**
-   * 
-   * @param key ex. 'KeyA' | 'Numpad0'
-   * @param maskCharacter
-   * @returns 
-   */
-  isValidCharacter(key: string, maskCharacter: MaskCharacter) {
+  isValidCharacter(keyCode: number, cursorPosition: number) {
 
-    if (maskCharacter === '*')
-      return true;
+    let next = this.getNextValidCharacters(cursorPosition);
 
-    if (maskCharacter === '9' && !!KeyCodesNumerics[key])
-      return true;
+    const valid = next.includes('*') ||
+      next.includes('9') && isNumericChar(keyCode) ||
+      next.includes('A') && isAlphabeticChar(keyCode) ||
+      (next[0] || '').charCodeAt(0) === keyCode;
 
-    if (maskCharacter === 'A' && !!KeyCodesAlpha[key])
-      return true;
+    if (keyCode === next[0].charCodeAt(0))
+      next = [next[0]];
 
-    return false;
+    return { valid, next };
+  }
+
+  getNextValidCharacters(cursorPosition: number) {
+    const output: (FormatCharacter | MaskCharacter)[] = [];
+
+    let maskCharFound = false;
+
+    for (let i = cursorPosition; i < this.mask.length; i++) {
+      const next = this.mask[i];
+
+      if (!maskCharFound && isFormatCharacter(next))
+        output.push(next);
+
+      if (!maskCharFound && isMaskCharacter(next))
+        maskCharFound = !!output.push(next);
+    }
+
+    return output;
   }
 
   setCursorPosition(element: HTMLInputElement, index: number) {
@@ -327,21 +329,8 @@ export class InputMask {
     }
   }
 
-  removeCharacterAtIndex(element: HTMLInputElement, index: number) {
-    if (element.value.length > 0) {
-      var newElementValue = element.value.slice(0, index) + element.value.slice(index + 1);
-
-      element.value = newElementValue;
-
-      if (element.value.length > 0)
-        this.setCursorPosition(element, index);
-      else
-        element.focus();
-    }
-  }
-
   insertCharacterAtIndex(element: HTMLInputElement, index: number, character: string) {
-    var newElementValue = element.value.slice(0, index) + character + element.value.slice(index);
+    const newElementValue = element.value.slice(0, index) + character + element.value.slice(index);
 
     element.value = newElementValue;
 
@@ -349,235 +338,101 @@ export class InputMask {
       this.setCursorPosition(element, index + 1);
     else
       element.focus();
-  }
 
-  checkAndInsertMaskCharacters(element: HTMLInputElement, index: number) {
-    const { mask } = this;
-
-    while (true) {
-      var isMaskCharacter = formatCharacters.indexOf(mask[index]) > -1;
-
-      var maskAlreadyThere = element.value.charAt(index) === mask[index];
-
-      if (isMaskCharacter && !maskAlreadyThere)
-        this.insertCharacterAtIndex(element, index, mask[index]);
-      else
-        return;
-
-      index += 1;
-    }
-  }
-
-  checkAndRemoveMaskCharacters(element: HTMLInputElement, index: number, key: number) {
-    if (element.value.length > 0) {
-      while (true) {
-
-        var character = element.value.charAt(index);
-
-        var isMaskCharacter = formatCharacters.indexOf(character) > -1;
-
-        if (!isMaskCharacter || index === 0 || index === element.value.length)
-          return;
-
-        this.removeCharacterAtIndex(element, index);
-
-        if (key === KeyCodes[Keys.backSpace])
-          index -= 1;
-
-
-        if (key === KeyCodes[Keys.delete])
-          index += 1;
-      }
-    }
-  }
-
-  validateDataEqualsDataType(element: HTMLInputElement) {
-    if (element == null || element.value === "") {
-      return;
-    }
-
-    var date = this.parseDate(element.value);
-
-    if (this.between(this.dataType, 1, 3)) {
-      if (isNaN(date.getDate()) || date.getFullYear() <= 1000) {
-        element.value = "";
-
-        return;
-      }
-    }
-
-    if (this.dataType > 1) {
-      if (isNaN(date.getTime())) {
-        element.value = "";
-
-        return;
-      }
-    }
-  }
-
-  onLostFocus(element: HTMLInputElement) {
-
-    const { mask } = this;
-
-    if (element.value.length > 0) {
-      if (element.value.length !== mask.length) {
-        element.value = "";
-
-        return;
-      }
-
-      for (var i = 0; i < element.value.length; i++) {
-        var elementCharacter = element.value.charAt(i);
-        const elementCharacterCharCode = elementCharacter.charCodeAt(0);
-
-        var maskCharacter = mask[i];
-
-        if (isMaskCharacter(maskCharacter)) {
-          if (elementCharacter === maskCharacter || maskCharacter === '*')
-            continue;
-          else {
-            element.value = "";
-            return;
-          }
-        }
-
-        else {
-          if (maskCharacter === 'A') {
-            if (!!KeyCodesNumerics[CodeKeys[elementCharacterCharCode]]) {
-              element.value = "";
-              return;
-            }
-          } else if (maskCharacter === '9') {
-            if (!!KeyCodesAlpha[CodeKeys[elementCharacterCharCode]]) {
-              element.value = "";
-              return;
-            }
-          }
-        }
-      }
-
-      if (this.validateDataType && this.dataType) {
-        this.validateDataEqualsDataType(element);
-      }
-    }
+    return element.value;
   }
 
   onKeyDown(element: HTMLInputElement, event: KeyboardEvent) {
 
     const { dataType, mask, useEnterKey, hasMask, forceLower, forceUpper } = this;
 
-    let keyCode = KeyCodes[event.code];
+    let keyCode = (event.key.length > 1 ? KeyCodes[event.key] : event.key.toUpperCase().charCodeAt(0)) || 0;
+    console.log(keyCode, event.key);
 
-    const copyCutPasteKeys = !!KeyCodesCutCopyPaste[event.code] && event.ctrlKey;
+    const isBackspace = Keys.backSpace.code === keyCode;
+    const isDelete = Keys.delete.code === keyCode;
 
-    const movementKeys = !!KeyCodesMovement[event.code];
+    if (event.ctrlKey || event.metaKey || KEYS_MOVEMENT.has(keyCode) || isBackspace || isDelete)
+      return;
 
-    const modifierKeys = event.ctrlKey || event.shiftKey;
-
-    if (copyCutPasteKeys || movementKeys || modifierKeys)
-      return true;
-
-
-    if (element.selectionStart === 0 && element.selectionEnd === element.value.length) {
-      this.originalValue = element.value;
-      element.value = "";
-    }
-
-    if (keyCode === KeyCodes[Keys.escape]) {
-      if (this.originalValue !== "") {
-        element.value = this.originalValue;
-      }
-
-      return true;
-    }
-
-    const isBackspace = Keys.backSpace === event.code;
-    const isDelete = Keys.delete === event.code;
-
-    if (isBackspace || isDelete) {
-      if (isBackspace) {
-        this.checkAndRemoveMaskCharacters(element, this.getCursorPosition(element) - 1, keyCode);
-
-        this.removeCharacterAtIndex(element, this.getCursorPosition(element) - 1);
-      }
-
-      if (isDelete) {
-        this.checkAndRemoveMaskCharacters(element, this.getCursorPosition(element), keyCode);
-
-        this.removeCharacterAtIndex(element, this.getCursorPosition(element));
-      }
-
-      event.preventDefault();
-
-      return false;
-    }
-
-    if (dataType && useEnterKey && event.code === Keys.enter) {
+    if (dataType && useEnterKey && keyCode === Keys.enter.code) {
       if (dataType >= 1 && dataType <= 5) {
         element.value = this.getFormattedDateTime(element.value);
       }
 
       event.preventDefault();
 
-      return false;
+      return;
     }
 
     if (element.value.length === mask.length) {
       event.preventDefault();
 
-      return false;
+      return;
     }
 
-    if (hasMask) {
-      this.checkAndInsertMaskCharacters(element, this.getCursorPosition(element));
-    }
+    // if (hasMask)
+    //   this.checkAndInsertMaskCharacters(element, cursorPosition);
 
-    if (this.isValidCharacter(event.code, mask[this.getCursorPosition(element)])) {
-      if (keyCode >= KeyCodes[Keys.numberPadZero] && keyCode <= KeyCodes[Keys.numberPadNine])
-        keyCode -= 48;
+    const { valid, next } = this.isValidCharacter(keyCode, this.getCursorPosition(element));
 
-      var character = event.shiftKey
-        ? String.fromCharCode(keyCode).toUpperCase()
-        : String.fromCharCode(keyCode).toLowerCase();
+    if (valid) {
 
-      if (forceUpper)
-        character = character.toUpperCase();
+      let { value } = element;
 
+      for (const [i, char] of next.entries()) {
+        console.log(value);
+        if (isFormatCharacter(char)) {
+          value = this.insertCharacterAtIndex(element, this.getCursorPosition(element), char);
+        }
+        else {
+          if (keyCode >= Keys.numpad_0.code && keyCode <= Keys.numpad_9.code)
+            keyCode -= 48;
 
-      if (forceLower)
-        character = character.toLowerCase();
+          let character = event.shiftKey
+            ? String.fromCharCode(keyCode).toUpperCase()
+            : String.fromCharCode(keyCode).toLowerCase();
 
+          if (forceUpper)
+            character = character.toUpperCase();
 
-      this.insertCharacterAtIndex(element, this.getCursorPosition(element), character);
+          if (forceLower)
+            character = character.toLowerCase();
 
-      if (hasMask)
-        this.checkAndInsertMaskCharacters(element, this.getCursorPosition(element));
+          value = this.insertCharacterAtIndex(element, this.getCursorPosition(element), character);
+        }
+      }
+
+      // if (hasMask)
+      //   this.checkAndInsertMaskCharacters(element, this.getCursorPosition(element));
 
     }
 
     event.preventDefault();
 
-    return false;
+    return;
   }
 
   onPaste(element: HTMLInputElement, event?: ClipboardEvent, data?: string) {
-    var pastedText = "";
 
-    if (data != null && data !== "")
+    event?.preventDefault();
+
+    var pastedText = '';
+
+    if (!!data && data !== '')
       pastedText = data;
-    else if (event != null && event.clipboardData && event.clipboardData.getData)
-      pastedText = event.clipboardData.getData("text/plain");
+    else if (!!event && event.clipboardData)
+      pastedText = event.clipboardData.getData('text/plain');
 
-
-    if (pastedText != null && pastedText !== "") {
+    if (pastedText != null && pastedText !== '') {
       for (var j = 0; j < formatCharacters.length; j++) {
-        pastedText.replace(formatCharacters[j], "");
+        pastedText.replace(formatCharacters[j], '');
       }
 
       for (var i = 0; i < pastedText.length; i++) {
-        if (formatCharacters.indexOf(pastedText[i]) > -1) {
+
+        if (isFormatCharacter(pastedText[i]))
           continue;
-        }
 
         const keyDownEvent = new KeyboardEvent('keydown', {
           bubbles: true,
@@ -586,6 +441,7 @@ export class InputMask {
         });
 
         this.onKeyDown(element, keyDownEvent);
+
       }
     }
 
@@ -599,532 +455,153 @@ export class InputMask {
       value = this.getFormattedDateTime(element.value);
     }
 
-    element.value = "";
+    element.value = '';
 
-    if (value != null && value !== "") {
+    if (value != null && value !== '') {
       this.onPaste(element, undefined, value);
     }
   }
 
 }
 
-// var InputMask1 = (function () {
-//   "use strict";
-
-
-//   var originalValue = "";
-
-//   var mask = null;
-
-//   var hasMask = false;
-
-//   var forceUpper = false;
-
-//   var forceLower = false;
-
-//   var useEnterKey = false;
-
-//   var validateDataType = false;
-
-//   var dataType = null;
-
-//   var keys = {
-//     asterisk: 42,
-//     zero: 48,
-//     nine: 57,
-//     a: 65,
-//     z: 90,
-//     backSpace: 8,
-//     tab: 9,
-//     delete: 46,
-//     left: 37,
-//     right: 39,
-//     end: 35,
-//     home: 36,
-//     numberPadZero: 96,
-//     numberPadNine: 105,
-//     shift: 16,
-//     enter: 13,
-//     control: 17,
-//     escape: 27,
-//     v: 86,
-//     c: 67,
-//     x: 88
-//   };
-
-//   var between = function (x, a, b) {
-//     return x && a && b && x >= a && x <= b;
-//   };
-
-//   var parseDate = function (value) {
-//     var now = new Date();
-
-//     var date = new Date(Date.UTC(
-//       now.getFullYear(),
-//       now.getMonth(),
-//       now.getDate(),
-//       now.getHours(),
-//       now.getMinutes(),
-//       now.getSeconds()
-//     ));
-
-//     if (value) {
-//       if (between(dataType, 1, 3)) {
-//         var tempDate = new Date(value);
-
-//         if (!isNaN(tempDate.getTime())) {
-//           date = new Date(Date.UTC(
-//             tempDate.getFullYear(),
-//             tempDate.getMonth(),
-//             tempDate.getDate(),
-//             tempDate.getHours(),
-//             tempDate.getMinutes(),
-//             tempDate.getSeconds()
-//           ));
-//         }
-//       } else {
-//         var timeSegments = value.split(":");
-
-//         var utcHours = timeSegments.length > 0 ? timeSegments[0] : 0;
-//         var utcMinutes = timeSegments.length > 1 ? timeSegments[1] : 0;
-//         var utcSeconds = timeSegments.length > 2 ? timeSegments[2] : 0;
-
-//         date.setUTCHours(utcHours, utcMinutes, utcSeconds);
-//       }
-//     }
-
-//     return date;
-//   };
-
-//   var getFormattedDateTime = function (value) {
-//     var date = parseDate(value);
-
-//     var day = date.getUTCDate() < 10 ? "0" + date.getUTCDate() : date.getUTCDate();
-//     var month = (date.getUTCMonth() + 1) < 10 ? "0" + (date.getUTCMonth() + 1) : (date.getUTCMonth() + 1);
-//     var year = date.getUTCFullYear();
-//     var hours = date.getUTCHours() < 10 ? "0" + date.getUTCHours() : date.getUTCHours();
-//     var minutes = date.getUTCMinutes() < 10 ? "0" + date.getUTCMinutes() : date.getUTCMinutes();
-//     var seconds = date.getUTCSeconds() < 10 ? "0" + date.getUTCSeconds() : date.getUTCSeconds();
-
-//     switch (dataType) {
-//       case 1:
-//         return month + "/" + day + "/" + year;
-//       case 2:
-//         return month + "/" + day + "/" + year + " " + hours + ":" + minutes + ":" + seconds;
-//       case 3:
-//         return month + "/" + day + "/" + year + " " + hours + ":" + minutes;
-//       case 4:
-//         return hours + ":" + minutes + ":" + seconds;
-//       case 5:
-//         return hours + ":" + minutes;
-//       default:
-//         return "";
-//     }
-//   };
-
-//   var getCursorPosition = function (element) {
-//     var position = 0;
-
-//     if (document.selection) {
-//       element.focus();
-
-//       var selectRange = document.selection.createRange();
-
-//       selectRange.moveStart("character", -element.value.length);
-
-//       position = selectRange.text.length;
-//     } else if (element.selectionStart || element.selectionStart === "0") {
-//       position = element.selectionStart;
-//     }
-
-//     return position;
-//   };
-
-//   var isValidCharacter = function (keyCode, maskCharacter) {
-//     var maskCharacterCode = maskCharacter.charCodeAt(0);
-
-//     if (maskCharacterCode === keys.asterisk) {
-//       return true;
-//     }
-
-//     var isNumber = (keyCode >= keys.zero && keyCode <= keys.nine) ||
-//       (keyCode >= keys.numberPadZero && keyCode <= keys.numberPadNine);
-
-//     if (maskCharacterCode === keys.nine && isNumber) {
-//       return true;
-//     }
-
-//     if (maskCharacterCode === keys.a && keyCode >= keys.a && keyCode <= keys.z) {
-//       return true;
-//     }
-
-//     return false;
-//   };
-
-//   var setCursorPosition = function (element, index) {
-//     if (element != null) {
-//       if (element.createTextRange) {
-//         var range = element.createTextRange();
-
-//         range.move("character", index);
-
-//         range.select();
-//       } else {
-//         if (element.selectionStart) {
-//           element.focus();
-
-//           element.setSelectionRange(index, index);
-//         } else {
-//           element.focus();
-//         }
-//       }
-//     }
-//   };
-
-//   var removeCharacterAtIndex = function (element, index) {
-//     if (element.value.length > 0) {
-//       var newElementValue = element.value.slice(0, index) + element.value.slice(index + 1);
-
-//       element.value = newElementValue;
-
-//       if (element.value.length > 0) {
-//         setCursorPosition(element, index);
-//       } else {
-//         element.focus();
-//       }
-//     }
-//   };
-
-//   var insertCharacterAtIndex = function (element, index, character) {
-//     var newElementValue = element.value.slice(0, index) + character + element.value.slice(index);
-
-//     element.value = newElementValue;
-
-//     if (element.value.length > 0) {
-//       setCursorPosition(element, index + 1);
-//     } else {
-//       element.focus();
-//     }
-//   };
-
-//   var checkAndInsertMaskCharacters = function (element, index) {
-//     while (true) {
-//       var isMaskCharacter = formatCharacters.indexOf(mask[index]) > -1;
-
-//       var maskAlreadyThere = element.value.charAt(index) === mask[index];
-
-//       if (isMaskCharacter && !maskAlreadyThere) {
-//         insertCharacterAtIndex(element, index, mask[index]);
-//       } else {
-//         return;
-//       }
-
-//       index += 1;
-//     }
-//   };
-
-//   var checkAndRemoveMaskCharacters = function (element, index, keyCode) {
-//     if (element.value.length > 0) {
-//       while (true) {
-//         var character = element.value.charAt(index);
-
-//         var isMaskCharacter = formatCharacters.indexOf(character) > -1;
-
-//         if (!isMaskCharacter || index === 0 || index === element.value.length) {
-//           return;
-//         }
-
-//         removeCharacterAtIndex(element, index);
-
-//         if (keyCode === keys.backSpace) {
-//           index -= 1;
-//         }
-
-//         if (keyCode === keys.delete) {
-//           index += 1;
-//         }
-//       }
-//     }
-//   };
-
-//   var validateDataEqualsDataType = function (element) {
-//     if (element == null || element.value === "") {
-//       return;
-//     }
-
-//     var date = parseDate(element.value);
-
-//     if (between(dataType, 1, 3)) {
-//       if (isNaN(date.getDate()) || date.getFullYear() <= 1000) {
-//         element.value = "";
-
-//         return;
-//       }
-//     }
-
-//     if (dataType > 1) {
-//       if (isNaN(date.getTime())) {
-//         element.value = "";
-
-//         return;
-//       }
-//     }
-//   }
 
-//   var onLostFocus = function (element) {
-//     if (element.value.length > 0) {
-//       if (element.value.length !== mask.length) {
-//         element.value = "";
+export class CurrencyMask {
 
-//         return;
-//       }
+  locale: string;
+  currency: string;
+  element: HTMLInputElement;
+  decimals: number
 
-//       for (var i = 0; i < element.value; i++) {
-//         var elementCharacter = element.value.charAt(i);
-//         var maskCharacter = mask[i];
+  numeric_value: number = 0;
 
-//         if (maskCharacters.indexOf(maskCharacter) > -1) {
-//           if (elementCharacter === maskCharacter || maskCharacter.charCodeAt(0) === keys.asterisk) {
-//             continue;
-//           } else {
-//             element.value = "";
+  constructor({
+    currency,
+    locale,
+    element,
+    decimals }: { currency?: string; locale?: string; decimals?: number; element: HTMLInputElement; }) {
 
-//             return;
-//           }
-//         } else {
-//           if (maskCharacter.charCodeAt(0) === keys.a) {
-//             if (elementCharacter.charCodeAt(0) <= keys.a || elementCharacter >= keys.z) {
-//               element.value = "";
+    this.currency = currency || 'USD';
+    this.locale = locale || 'en-US';
+    this.decimals = decimals! >= 0 ? decimals! : 2;
 
-//               return;
-//             }
-//           } else if (maskCharacter.charCodeAt(0) === keys.nine) {
-//             if (elementCharacter.charCodeAt(0) <= keys.zero || elementCharacter >= keys.nine) {
-//               element.value = "";
 
-//               return;
-//             }
-//           }
-//         }
-//       }
+    this.element = element;
 
-//       if (validateDataType && dataType) {
-//         validateDataEqualsDataType(element);
-//       }
-//     }
-//   };
+    this.element.addEventListener('keydown', (event) => this.keydown(event, this.element));
+  }
 
-//   var onKeyDown = function (element, event) {
-//     var key = event.which;
+  toNumber(value: string) {
+    const int = parseInt((String(value).match(/[0-9]/g) || []).join('') || '0');
 
-//     var copyCutPasteKeys = [keys.v, keys.c, keys.x].indexOf(key) > -1 && event.ctrlKey;
+    if (this.decimals)
+      return int / Math.pow(10, this.decimals);
+    else
+      return int;
+  }
 
-//     var movementKeys = [keys.left, keys.right, keys.tab].indexOf(key) > -1;
+  toCurrency(value: number) {
+    return value.toLocaleString(this.locale, {
+      style: 'currency',
+      currency: this.currency,
+      minimumFractionDigits: this.decimals,
+      maximumFractionDigits: this.decimals
+    }) || '';
+  }
 
-//     var modifierKeys = event.ctrlKey || event.shiftKey;
+  setCursorPosition(element: HTMLInputElement, index: number) {
+    if (element) {
+      if (element.selectionStart) {
+        element.focus();
 
-//     if (copyCutPasteKeys || movementKeys || modifierKeys) {
+        element.setSelectionRange(index, index);
+      } else {
+        element.focus();
+      }
+    }
+  }
 
-//       return true;
-//     }
+  keydown(event: KeyboardEvent, element: HTMLInputElement) {
 
-//     if (element.selectionStart === 0 && element.selectionEnd === element.value.length) {
-//       originalValue = element.value;
+    if (event.ctrlKey || event.metaKey || KEYS_MOVEMENT.has(KeyCodes[event.key]))
+      return;
 
-//       element.value = "";
-//     }
+    event.preventDefault();
 
-//     if (key === keys.escape) {
-//       if (originalValue !== "") {
-//         element.value = originalValue;
-//       }
+    let cursorPosition = element.selectionEnd || 0;
+    const cursorIsAtEnd = cursorPosition === element.value.length;
 
-//       return true;
-//     }
+    if (event.key === Keys.backSpace.key) {
 
-//     if (key === keys.backSpace || key === keys.delete) {
-//       if (key === keys.backSpace) {
-//         checkAndRemoveMaskCharacters(element, getCursorPosition(element) - 1, key);
+      let prevNumIndex = (() => {
+        for (let i = cursorPosition - 1; i > 0; i--) {
+          if (!isNaN(Number(element.value[i])))
+            return i;
+        }
 
-//         removeCharacterAtIndex(element, getCursorPosition(element) - 1);
-//       }
+        return 0;
+      })();
 
-//       if (key === keys.delete) {
-//         checkAndRemoveMaskCharacters(element, getCursorPosition(element), key);
+      const removed = element.value.slice(0, prevNumIndex) + element.value.slice(cursorPosition);
 
-//         removeCharacterAtIndex(element, getCursorPosition(element));
-//       }
+      console.log(removed, element.value.slice(0, prevNumIndex), element.value.slice(cursorPosition), cursorPosition);
 
-//       event.preventDefault();
+      element.value = this.toCurrency(this.toNumber(removed));
 
-//       return false;
-//     }
+      if (!cursorIsAtEnd)
+        this.setCursorPosition(element, prevNumIndex);
 
-//     if (dataType && useEnterKey && key === keys.enter) {
-//       if (dataType >= 1 && dataType <= 5) {
-//         element.value = getFormattedDateTime();
-//       }
+    }
 
-//       event.preventDefault();
+    if (event.key === Keys.backSpace.key || event.key === Keys.delete.key) {
 
-//       return false;
-//     }
 
-//     if (element.value.length === mask.length) {
-//       event.preventDefault();
+    }
 
-//       return false;
-//     }
+    else {
+      const num = Number(event.key);
 
-//     if (hasMask) {
-//       checkAndInsertMaskCharacters(element, getCursorPosition(element));
-//     }
+      if (isNaN(num))
+        return;
 
-//     if (isValidCharacter(key, mask[getCursorPosition(element)])) {
-//       if (key >= keys.numberPadZero && key <= keys.numberPadNine) {
-//         key = key - 48;
-//       }
-
-//       var character = event.shiftKey
-//         ? String.fromCharCode(key).toUpperCase()
-//         : String.fromCharCode(key).toLowerCase();
-
-//       if (forceUpper) {
-//         character = character.toUpperCase();
-//       }
-
-//       if (forceLower) {
-//         character = character.toLowerCase();
-//       }
-
-//       insertCharacterAtIndex(element, getCursorPosition(element), character);
-
-//       if (hasMask) {
-//         checkAndInsertMaskCharacters(element, getCursorPosition(element));
-//       }
-//     }
-
-//     event.preventDefault();
-
-//     return false;
-//   };
-
-//   var onPaste = function (element, event, data) {
-//     var pastedText = "";
-
-//     if (data != null && data !== "") {
-//       pastedText = data;
-//     } else if (event != null && window.clipboardData && window.clipboardData.getData) {
-//       pastedText = window.clipboardData.getData("text");
-//     } else if (event != null && event.clipboardData && event.clipboardData.getData) {
-//       pastedText = event.clipboardData.getData("text/plain");
-//     }
-
-//     if (pastedText != null && pastedText !== "") {
-//       for (var j = 0; j < formatCharacters.length; j++) {
-//         pastedText.replace(formatCharacters[j], "");
-//       }
-
-//       for (var i = 0; i < pastedText.length; i++) {
-//         if (formatCharacters.indexOf(pastedText[i]) > -1) {
-//           continue;
-//         }
-
-//         var keyDownEvent = document.createEventObject ? document.createEventObject() : document.createEvent("Events");
-
-//         if (keyDownEvent.initEvent) {
-//           keyDownEvent.initEvent("keydown", true, true);
-//         }
-
-//         keyDownEvent.keyCode = keyDownEvent.which = pastedText[i].charCodeAt(0);
-
-//         onKeyDown(element, keyDownEvent);
-//       }
-//     }
-
-//     return false;
-//   };
-
-//   var formatWithMask = function (element) {
-//     var value = element.value;
-
-//     if (between(dataType, 1, 5)) {
-//       value = getFormattedDateTime(element.value);
-//     }
-
-//     element.value = "";
-
-//     if (value != null && value !== "") {
-//       onPaste(element, null, value);
-//     }
-//   };
-
-//   return {
-//     Initialize: function (elements, options) {
-//       if (!elements || !options) {
-//         return;
-//       }
-
-//       if (options.mask && options.mask.length > 0) {
-//         mask = options.mask.split("");
-//         hasMask = true;
-//       }
-
-//       if (options.forceUpper) {
-//         forceUpper = options.forceUpper;
-//       }
-
-//       if (options.forceLower) {
-//         forceLower = options.forceLower;
-//       }
-
-//       if (options.validateDataType) {
-//         validateDataType = options.validateDataType;
-//       }
-
-//       if (options.dataType) {
-//         dataType = options.dataType;
-//       }
-
-//       if (options.useEnterKey) {
-//         useEnterKey = options.useEnterKey;
-//       }
-
-//       [].forEach.call(elements, function (element) {
-//         element.onblur = function () {
-//           if (!element.getAttribute("readonly") && hasMask) {
-//             return onLostFocus(element);
-//           }
-
-//           return true;
-//         };
-
-//         element.onkeydown = function (event) {
-//           if (!element.getAttribute("readonly")) {
-//             return onKeyDown(element, event);
-//           }
-
-//           return true;
-//         };
-
-//         element.onpaste = function (event) {
-//           if (!element.getAttribute("readonly")) {
-//             return onPaste(element, event, null);
-//           }
-
-//           return true;
-//         }
-
-//         if (options.placeHolder) {
-//           element.setAttribute("placeholder", options.placeHolder);
-//         }
-
-//         if (element.value.length > 0 && hasMask) {
-//           formatWithMask(element);
-//         }
-//       });
-
-//       document.documentElement.scrollTop = 0;
-//     }
-//   };
-// });
+      console.log('cursorPosition', element.selectionEnd || 0, element.value.length);
+      const orig = String(element.value);
+
+      const mod = orig.slice(0, cursorPosition) + String(num) + orig.slice(cursorPosition);
+      const mod_num = this.toNumber(mod);
+
+      element.value = this.toCurrency(mod_num);
+
+      // If it's at the end, then we don't have to do any comparison to decide where to place the cursor
+      if (cursorPosition !== 0 && cursorPosition !== (orig.length)) {
+
+        let slice = String(num) + orig.slice(cursorPosition);
+        let sliceNum = this.toCurrency(this.toNumber(slice)).slice(1);
+        console.log(slice, sliceNum);
+        this.setCursorPosition(element, element.value.indexOf(sliceNum) + 1);
+      }
+
+      // const value = String(element.value);
+
+      // const str = value.slice(0, cursorPosition) + String(num) + value.slice(cursorPosition);
+
+      // console.log(value);
+      // console.log(element.value);
+      // console.log(cursorPosition);
+
+      // const arr = Array.from(value);
+      // const arr2 = Array.from(element.value);
+      // const diffs = arr.reduceRight((sum, char, i) => {
+      //   if (i < 3 && arr2[i] !== arr[i])
+      //     return sum + 1;
+      //   return sum;
+      // }, 0);
+
+      // console.log(diffs);
+
+      // if (cursorPosition === 0 || cursorPosition === value.length)
+      //   this.setCursorPosition(element, element.value.length);
+      // else
+      //   this.setCursorPosition(element, cursorPosition + diffs + 1);
+    }
+  }
+}
