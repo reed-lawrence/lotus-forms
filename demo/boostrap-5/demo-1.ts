@@ -1,9 +1,9 @@
-import { combineLatest, debounceTime, filter, map, Observable, switchMap, tap } from "rxjs";
+import { combineLatest, debounceTime, filter, map, switchMap } from "rxjs";
 
 import { Validators, ValidationError } from "../../src";
 import { CheckboxControl } from "../../src/controls/inputs/checkbox";
 import { TextInputControl } from "../../src/controls/inputs/text";
-import { CurrencyMask, InputMask, Masks } from "../../src/internal/input-mask";
+import { CurrencyMask } from "../../src/internal/input-mask";
 
 import './config';
 
@@ -91,10 +91,22 @@ username.onDispose(
   })
 );
 
-const phone = new TextInputControl({
+const phone = new TextInputControl<number | null>({
   selector: '#phone-number',
-  value: '',
-  name: 'Phone Number'
+  value: null,
+  name: 'Phone Number',
+  mask: new CurrencyMask(),
+  validators: [(control) => control.$value.pipe(map(value => {
+    if (!value || value < 5000)
+      return {
+        threshold: 'Must exceed $50.00'
+      }
+
+    return;
+  }))]
 });
 
-const mask = new CurrencyMask({ element: phone.ele });
+phone.$value.subscribe({ next: console.log });
+first_name.$value.subscribe({ next: console.log });
+
+setTimeout(() => phone.value = 1000 as any, 3000);

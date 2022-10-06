@@ -1,46 +1,65 @@
 import { IInputControlArgs, InputControlAbstract } from "./input-control";
-import { filter, map, fromEvent, tap } from 'rxjs';
+import { filter, map, fromEvent } from 'rxjs';
+import { IInputMask } from "../../internal/input-mask";
 
-export interface ITextInputControlArgs extends IInputControlArgs<string> {
-  mask?: (value: string) => string;
+export interface ITextInputControlArgs<T = string> extends IInputControlArgs<T> {
+  mask?: IInputMask;
 }
 
-export class TextInputControl extends InputControlAbstract<string> {
+export class TextInputControl<T = string> extends InputControlAbstract<T> {
 
-  constructor(args: ITextInputControlArgs) {
+  constructor(args: ITextInputControlArgs<T>) {
     super(args);
 
     const { ele } = this;
+    const { mask } = args;
 
-    this._subs.push(
+    if (mask) {
 
-      this.$value.pipe(
-        filter((value) => value !== ele.value),
-        map((value) => args.mask ? args.mask(value) : value),
-      ).subscribe({
-        next: (value) => {
-          ele.value = value;
+      this.onDispose(() => mask.unbind());
+
+      let raw: T | undefined;
+      const { set } = mask.bind({
+        element: ele, onMask: ({ detail }) => {
+          raw = detail.raw;
+          this.value = detail.raw as T;
         }
-      }),
+      });
 
-      fromEvent(ele, 'input').pipe(
-        map(() => ele.value),
-        filter((value) => value !== this.value),
-      ).subscribe({
-        next: (value) => {
-          if (args.mask) {
-            const masked = args.mask(value);
+      this._subs.push(
 
-            if (value !== masked) {
-              ele.value = masked;
-              value = masked;
-            }
+        // Value changes on control
+        this.$value.pipe(
+          filter(value => value !== raw)
+        ).subscribe({
+          next: (value) => {
+            set(value);
           }
+        })
 
-          this.value = value;
-        }
-      })
-    );
+      );
+    }
+
+    // If there is no mask, bind to the events as normal
+    else {
+      this._subs.push(
+        this.$value.pipe(
+          filter((value: unknown) => value !== ele.value),
+        ).subscribe({
+          next: (value) => {
+            ele.value = value as string;
+          }
+        }),
+
+        fromEvent(ele, 'input').pipe(
+          map(() => ele.value),
+        ).subscribe({
+          next: (value) => {
+            (this.value as unknown) = value;
+          }
+        })
+      );
+    }
   }
 
 }

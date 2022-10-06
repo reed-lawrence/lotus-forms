@@ -464,144 +464,370 @@ export class InputMask {
 
 }
 
+export interface MaskEventValue<T = any> {
+  raw: T;
+  formatted: string;
+}
 
-export class CurrencyMask {
+export interface IMaskEvent<T> extends CustomEvent<MaskEventValue<T>> {
+  type: 'mask';
+}
 
-  locale: string;
-  currency: string;
-  element: HTMLInputElement;
-  decimals: number
+export interface IInputMask<T = any, U extends IMaskEvent<T> = IMaskEvent<T>> {
+  bind(args: { element: HTMLInputElement; onMask?: (event: U) => void }): { set: (value: T) => void; };
+  unbind(): void;
+}
 
-  numeric_value: number = 0;
+type EventListenerMap = {
+  [Key in keyof HTMLElementEventMap]: (ev: HTMLBodyElementEventMap[Key]) => void;
+}
 
-  constructor({
-    currency,
-    locale,
-    element,
-    decimals }: { currency?: string; locale?: string; decimals?: number; element: HTMLInputElement; }) {
+type ICurrencyMaskEvent = IMaskEvent<number>;
 
-    this.currency = currency || 'USD';
-    this.locale = locale || 'en-US';
-    this.decimals = decimals! >= 0 ? decimals! : 2;
+export class CurrencyMask implements IInputMask<number | null, IMaskEvent<number | null>> {
 
+  #element!: HTMLInputElement;
 
-    this.element = element;
+  #locale: string;
 
-    this.element.addEventListener('keydown', (event) => this.keydown(event, this.element));
+  #currency: string;
+
+  #decimals: number;
+
+  #bindings: Partial<EventListenerMap & { 'mask': (ev: ICurrencyMaskEvent) => void; }> = {};
+
+  constructor(args?: Partial<{ currency: string; locale: string; decimals: number; }>) {
+
+    const { currency, locale, decimals } = args || {};
+
+    this.#currency = currency || 'USD';
+    this.#locale = locale || 'en-US';
+    this.#decimals = decimals! >= 0 ? decimals! : 2;
+
   }
 
-  toNumber(value: string) {
-    const int = parseInt((String(value).match(/[0-9]/g) || []).join('') || '0');
+  bind({ element, onMask }: { element: HTMLInputElement; onMask?: (event: ICurrencyMaskEvent) => void }) {
+    this.#element = element;
 
-    if (this.decimals)
-      return int / Math.pow(10, this.decimals);
-    else
-      return int;
-  }
-
-  toCurrency(value: number) {
-    return value.toLocaleString(this.locale, {
-      style: 'currency',
-      currency: this.currency,
-      minimumFractionDigits: this.decimals,
-      maximumFractionDigits: this.decimals
-    }) || '';
-  }
-
-  setCursorPosition(element: HTMLInputElement, index: number) {
-    if (element) {
-      if (element.selectionStart) {
-        element.focus();
-
-        element.setSelectionRange(index, index);
-      } else {
-        element.focus();
+    this.#bindings = {
+      keydown: (event) => this.#onKeyDown(this.#element, event),
+      paste: (event) => this.#onPaste(this.#element, event),
+      input: (event) => {
+        if (this.#element.value === '')
+          this.#setValue(null);
       }
     }
+
+    if (onMask)
+      this.#bindings['mask'] = (event) => onMask(event);
+
+    for (const [key, fn] of Object.entries(this.#bindings))
+      this.#element.addEventListener(key, fn as EventListener);
+
+    return {
+      set: (value: number | null) => this.#setValue(value, { emit: false })
+    };
   }
 
-  keydown(event: KeyboardEvent, element: HTMLInputElement) {
+  unbind() {
+    for (const [key, fn] of Object.entries(this.#bindings))
+      this.#element.removeEventListener(key, fn as EventListener);
 
-    if (event.ctrlKey || event.metaKey || KEYS_MOVEMENT.has(KeyCodes[event.key]))
+    this.#bindings = {};
+  }
+
+  #setValue(value: number | string | null, { emit = true } = {}) {
+    const element = this.#element;
+
+    if (!element)
+      return;
+
+    let parsed: number | null = null;
+    let raw: number | null = null;
+    let str = '';
+
+    if (value !== null) {
+      [parsed, raw] = this.#toNumber(String(value));
+      str = this.#toCurrency(parsed);
+    }
+
+    element.value = str;
+
+    if (emit)
+      this.#dispatchEvent(element, raw);
+
+  }
+
+  #onPaste(element: HTMLInputElement, event: ClipboardEvent) {
+
+    if (!element)
+      return;
+
+    const data = event.clipboardData?.getData('text/plain');
+
+    if (!data)
       return;
 
     event.preventDefault();
 
-    let cursorPosition = element.selectionEnd || 0;
-    const cursorIsAtEnd = cursorPosition === element.value.length;
+    let [lower, upper] = [
+      element.selectionStart ?? element.value.length,
+      element.selectionEnd ?? element.value.length
+    ]
+      .sort((a, b) => a > b ? 1 : -1);
 
-    if (event.key === Keys.backSpace.key) {
+    let model = element.value;
 
-      let prevNumIndex = (() => {
-        for (let i = cursorPosition - 1; i > 0; i--) {
-          if (!isNaN(Number(element.value[i])))
-            return i;
-        }
+    const cursorIsAtEnd = lower === model.length;
 
-        return 0;
-      })();
+    // Highlight and replace
+    if (element.selectionStart !== element.selectionEnd) {
 
-      const removed = element.value.slice(0, prevNumIndex) + element.value.slice(cursorPosition);
+      lower = this.#prevNumIndex(element.value, lower) + 1;
 
-      console.log(removed, element.value.slice(0, prevNumIndex), element.value.slice(cursorPosition), cursorPosition);
+      const pt1 = model.slice(0, lower);
+      const pt2 = model.slice(upper);
 
-      element.value = this.toCurrency(this.toNumber(removed));
-
-      if (!cursorIsAtEnd)
-        this.setCursorPosition(element, prevNumIndex);
+      model = pt1 + data + pt2;
+      lower += data.length;
 
     }
 
-    if (event.key === Keys.backSpace.key || event.key === Keys.delete.key) {
+    // Additional digit
+    else {
 
+      model = model.slice(0, lower) + data + model.slice(lower);
+      lower += data.length;
+
+    }
+
+    this.#setValue(model);
+
+    if (!cursorIsAtEnd)
+      this.#setCursorPosition(element, model, lower);
+
+  }
+
+  #onKeyDown(element: HTMLInputElement, event: KeyboardEvent) {
+
+    if (!element)
+      return;
+
+    if (event.ctrlKey || event.metaKey || event.key === Keys.space.key || KEYS_MOVEMENT.has(KeyCodes[event.key]))
+      return;
+
+    event.preventDefault();
+
+    let [lower, upper] = [
+      element.selectionStart ?? element.value.length,
+      element.selectionEnd ?? element.value.length
+    ]
+      .sort((a, b) => a > b ? 1 : -1);
+
+    let model = element.value;
+
+    const cursorIsAtEnd = lower === model.length;
+
+    if (event.key === Keys.backSpace.key) {
+
+      const all_selected = lower === 0 && upper === element.value.length;
+
+      // To allow for selecting all chars and clearing the input field
+      if (all_selected)
+        return this.#setValue(null);
+
+      let pt1: string;
+      let pt2: string;
+
+      // Deleting multiple selections
+      if (element.selectionStart !== element.selectionEnd) {
+
+        lower = this.#prevNumIndex(element.value, lower) + 1;
+        pt1 = element.value.slice(0, lower);
+        pt2 = element.value.slice(upper);
+
+      }
+
+      // Single backspace
+      else {
+
+        lower = this.#prevNumIndex(element.value, lower);
+        pt1 = element.value.slice(0, lower);
+        pt2 = element.value.slice(lower + 1);
+
+      }
+
+      model = pt1 + pt2;
+      this.#setValue(model);
 
     }
 
     else {
+
       const num = Number(event.key);
 
       if (isNaN(num))
         return;
 
-      console.log('cursorPosition', element.selectionEnd || 0, element.value.length);
-      const orig = String(element.value);
+      // Highlight and replace
+      if (element.selectionStart !== element.selectionEnd) {
 
-      const mod = orig.slice(0, cursorPosition) + String(num) + orig.slice(cursorPosition);
-      const mod_num = this.toNumber(mod);
+        lower = this.#prevNumIndex(element.value, lower) + 1;
 
-      element.value = this.toCurrency(mod_num);
+        const pt1 = model.slice(0, lower);
+        const pt2 = model.slice(upper);
 
-      // If it's at the end, then we don't have to do any comparison to decide where to place the cursor
-      if (cursorPosition !== 0 && cursorPosition !== (orig.length)) {
+        model = pt1 + String(num) + pt2;
 
-        let slice = String(num) + orig.slice(cursorPosition);
-        let sliceNum = this.toCurrency(this.toNumber(slice)).slice(1);
-        console.log(slice, sliceNum);
-        this.setCursorPosition(element, element.value.indexOf(sliceNum) + 1);
+        lower++;
       }
 
-      // const value = String(element.value);
+      // Additional digit
+      else {
+        model = model.slice(0, lower) + String(num) + model.slice(lower);
+        lower++;
+      }
 
-      // const str = value.slice(0, cursorPosition) + String(num) + value.slice(cursorPosition);
-
-      // console.log(value);
-      // console.log(element.value);
-      // console.log(cursorPosition);
-
-      // const arr = Array.from(value);
-      // const arr2 = Array.from(element.value);
-      // const diffs = arr.reduceRight((sum, char, i) => {
-      //   if (i < 3 && arr2[i] !== arr[i])
-      //     return sum + 1;
-      //   return sum;
-      // }, 0);
-
-      // console.log(diffs);
-
-      // if (cursorPosition === 0 || cursorPosition === value.length)
-      //   this.setCursorPosition(element, element.value.length);
-      // else
-      //   this.setCursorPosition(element, cursorPosition + diffs + 1);
+      this.#setValue(model);
     }
+
+    if (!cursorIsAtEnd)
+      this.#setCursorPosition(element, model, lower);
+
+  }
+
+  #dispatchEvent(element: HTMLInputElement, raw: number | null) {
+
+    const ev = new CustomEvent('mask', {
+      detail: {
+        raw,
+        formatted: element.value
+      }
+    }) as ICurrencyMaskEvent;
+
+    element.dispatchEvent(ev);
+  }
+
+  #toNumber(value: string) {
+    const chars = this.#extractNumericChars(value).join('') || '';
+    let formatted = chars;
+
+    if (this.#decimals && formatted) {
+      const n = this.#decimals;
+      const matches = formatted.match(new RegExp(`^([0-9]*)([0-9]{${n},${n}})$`)) || ['', '0', value.padStart(n, '0')];
+      formatted = `${matches[1]}.${matches[2]}`;
+    }
+
+    return [
+      Number(formatted),
+      Number(chars)
+    ] as const;
+  }
+
+  #toCurrency(value: number) {
+    return value.toLocaleString(this.#locale, {
+      style: 'currency',
+      currency: this.#currency,
+      minimumFractionDigits: this.#decimals,
+      maximumFractionDigits: this.#decimals
+    }) || '';
+  }
+
+  /**
+   * Work backwards from the given index, and return the index of the next prior number
+   */
+  #prevNumIndex(str: string, from: number) {
+    for (let i = from - 1; i > 0; i--) {
+      if (!isNaN(Number(str[i])))
+        return i;
+    }
+    return 0;
+  }
+
+  /**
+   * Extract only the numeric chars in a given string
+   */
+  #extractNumericChars(model: string): string[] {
+    return model.match(/[0-9]/g) || [];
+  }
+
+  /**
+   * We can use this to determine where we should insert the cursor 
+   * after modification via the returned substring length
+   * 
+   * Ex. 
+   * 
+   * ```text
+   * model: '$12,345.67'  
+   * n: 4 -> ['$12,34', ...]
+   * 
+   * return '$12,34'
+   * ```
+   * 
+   */
+  #substringToFirstNDigits(model: string, n: number) {
+    if (!model)
+      model = '';
+
+    const matches = model.match(new RegExp(`^(.*?[0-9]){${n},${n}}`)) || [];
+
+    return matches[0] || '';
+  }
+
+  /**
+   * Compares the current Input value to the original value in context of where the modification 
+   * was performed. By using RegExp, this method can remain locale-agnostic and we can 
+   * ignore any formatting sugar added 
+   * 
+   * Consider we are inserting 1 character:
+   * 
+   * ```text
+   * $123 .45 -> $1,239.45
+   *     ^9
+   * 
+   * model = $1239.45
+   * element.value = $1,239.45
+   * lower_limit = 5
+   * ```
+   * 
+   * We can determine that the model has 4 numeric characters preceding (inclusive) the point 
+   * of modification 
+   * 
+   *   - 4 chars: `1239` (n=4)
+   * 
+   * From this, we can posit that the cursor needs to be at the position where our first 4 numeric
+   * chars appear. This is done so that we don't need to account for any formatted tokens such as `$` | `,` | `.`;
+   * 
+   * ```text
+   * Extract string containing first 4 numeric chars
+   * '$1,239.45' 
+   *   -> '$1,239' 
+   *     -> '$1,239'.length === 6 
+   *       -> Place cursor at position [6]
+   * ```
+   * 
+   * @param element Input element - to be used to extract current value
+   * @param model Modified value (may not be formatted)
+   * @param lower_limit Inclusive index of everything preceeding the modification point
+   */
+  #setCursorPosition(element: HTMLInputElement, model: string, lower_limit: number) {
+
+    if (!element)
+      return;
+
+    // How many numbers do we have prior to the lower_limit (cursor position)
+    const n = this.#extractNumericChars(model.slice(0, lower_limit)).length;
+
+    // Get the first portion of the model that contains N number of digits
+    const index = this.#substringToFirstNDigits(element.value, n).length || element.value.length;
+
+    if (element.selectionStart) {
+      element.focus();
+      element.setSelectionRange(index, index);
+    }
+
+    else
+      element.focus();
   }
 }
+
